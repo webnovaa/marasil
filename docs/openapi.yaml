@@ -1,0 +1,53 @@
+openapi: 3.1.0
+info:
+  title: Marasil Platform API
+  version: 1.0.0
+  description: Public REST API for Marasil messaging platform.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+  /messages/text:
+    post:
+      summary: Accept a text message
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, to, message]
+              properties:
+                device_id:
+                  type: string
+                to:
+                  type: string
+                  example: '+963944123456'
+                message:
+                  type: string
+                category:
+                  type: string
+                  enum: [otp, transactional, marketing]
+      responses:
+        '202':
+          description: Message accepted
+        '403':
+          description: Quota or subscription error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key prefixed with mrs_live_ or mrs_test_

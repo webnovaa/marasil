@@ -1,0 +1,313 @@
+/**
+ * Marasil design tokens (RGB channel triplets for alpha-friendly Tailwind).
+ * Hex reference: docs/design/design-tokens.md
+ * Feature components must consume these via CSS variables / Tailwind — not raw hex.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Brand — Aubergine */
+  --brand-50: 251 248 252;
+  --brand-100: 244 236 246;
+  --brand-200: 231 214 234;
+  --brand-300: 210 180 216;
+  --brand-400: 181 136 188;
+  --brand-500: 146 92 154;
+  --brand-600: 116 62 124;
+  --brand-700: 91 47 98;
+  --brand-800: 70 35 77;
+  --brand-900: 50 26 57;
+  --brand-950: 33 16 38;
+
+  /* Accent — deep aubergine secondary scale (corporate, muted) */
+  --accent-50: 245 240 246;
+  --accent-100: 235 226 237;
+  --accent-200: 216 198 219;
+  --accent-300: 190 161 194;
+  --accent-400: 158 118 165;
+  --accent-500: 129 82 139;
+  --accent-600: 103 58 112;
+  --accent-700: 81 43 90;
+  --accent-800: 58 29 66;
+  --accent-900: 41 19 48;
+  --accent-950: 24 10 29;
+
+  /* Cool neutral scale — corporate, calm, neutral */
+  --neutral-0: 255 255 255;
+  --neutral-50: 250 250 250;
+  --neutral-100: 244 244 245;
+  --neutral-200: 228 228 231;
+  --neutral-300: 212 212 216;
+  --neutral-400: 161 161 170;
+  --neutral-500: 113 113 122;
+  --neutral-600: 82 82 91;
+  --neutral-700: 63 63 70;
+  --neutral-800: 39 39 42;
+  --neutral-900: 24 24 27;
+  --neutral-950: 9 9 11;
+
+  /* Semantic surfaces — clean light, white & near-white */
+  --background: 250 250 250;
+  --foreground: 24 24 27;
+  --canvas: 250 250 250;
+  --canvas-subtle: 249 250 251;
+  --surface: 255 255 255;
+  --surface-raised: 255 255 255;
+  --surface-soft: 244 244 245;
+  --surface-muted: 244 244 245;
+  --surface-hover: 244 244 245;
+  --surface-pressed: 244 244 245;
+  --surface-inverse: 24 24 27;
+
+  --card: 255 255 255;
+  --card-foreground: 24 24 27;
+  --popover: 255 255 255;
+  --popover-foreground: 24 24 27;
+
+  /* Text */
+  --text: 24 24 27;
+  --text-primary: 24 24 27;
+  --text-secondary: 63 63 70;
+  --text-muted: 82 82 91;
+  --text-disabled: 161 161 170;
+  --text-inverse: 255 255 255;
+  --text-brand: 50 26 57;
+  --text-accent: 67 89 34;
+  --muted: 82 82 91;
+  --subtle: 113 113 122;
+  --inverse: 255 255 255;
+
+  /* Borders — crisp, visible */
+  --border: 212 212 216;
+  --border-subtle: 228 228 231;
+  --border-soft: 228 228 231;
+  --border-strong: 161 161 170;
+  --border-brand: 116 62 124;
+  --border-focus: 116 62 124;
+  --input: 212 212 216;
+  --input-border: 212 212 216;
+  --input-border-hover: 161 161 170;
+  --input-border-focus: 116 62 124;
+
+  /* Primary / accent / secondary (shadcn-compatible) */
+  --primary: 50 26 57;
+  --primary-hover: 70 35 77;
+  --primary-active: 33 16 38;
+  --primary-foreground: 255 255 255;
+
+  --accent: 116 62 124;
+  --accent-hover: 91 47 98;
+  --accent-active: 70 35 77;
+  --accent-foreground: 255 255 255;
+
+  --secondary: 255 255 255;
+  --secondary-hover: 244 244 245;
+  --secondary-foreground: 50 26 57;
+
+  --muted-surface: 244 244 245;
+  --muted-foreground: 82 82 91;
+
+  --ring: 116 62 124;
+  --ring-brand: 116 62 124;
+  --ring-offset: 255 255 255;
+  --focus-ring: 116 62 124;
+
+  /* Success */
+  --success-50: 236 253 246;
+  --success-100: 209 250 232;
+  --success-200: 166 240 210;
+  --success-500: 22 135 95;
+  --success-600: 16 115 83;
+  --success-700: 13 94 69;
+  --success-900: 7 60 45;
+  --success: 22 135 95;
+  --success-background: 236 253 246;
+  --success-bg: 236 253 246;
+  --success-border: 166 240 210;
+  --success-foreground: 13 94 69;
+  --success-text: 13 94 69;
+  --success-icon: 22 135 95;
+
+  /* Warning */
+  --warning-50: 255 248 235;
+  --warning-100: 255 235 197;
+  --warning-200: 248 212 141;
+  --warning-500: 196 122 22;
+  --warning-600: 165 95 12;
+  --warning-700: 122 67 8;
+  --warning-900: 77 41 5;
+  --warning: 196 122 22;
+  --warning-background: 255 248 235;
+  --warning-bg: 255 248 235;
+  --warning-border: 248 212 141;
+  --warning-foreground: 122 67 8;
+  --warning-text: 122 67 8;
+  --warning-icon: 196 122 22;
+
+  /* Danger */
+  --danger-50: 255 240 243;
+  --danger-100: 255 220 227;
+  --danger-200: 243 182 193;
+  --danger-500: 196 61 85;
+  --danger-600: 169 47 71;
+  --danger-700: 142 38 57;
+  --danger-900: 87 22 36;
+  --danger: 196 61 85;
+  --danger-background: 255 240 243;
+  --danger-bg: 255 240 243;
+  --danger-border: 243 182 193;
+  --danger-foreground: 142 38 57;
+  --danger-text: 142 38 57;
+  --danger-icon: 196 61 85;
+  --destructive: 196 61 85;
+  --destructive-foreground: 255 255 255;
+
+  /* Info */
+  --info-50: 238 244 255;
+  --info-100: 220 232 255;
+  --info-200: 184 204 245;
+  --info-500: 59 111 216;
+  --info-600: 46 93 189;
+  --info-700: 35 78 166;
+  --info-900: 23 51 111;
+  --info: 59 111 216;
+  --info-background: 238 244 255;
+  --info-bg: 238 244 255;
+  --info-border: 184 204 245;
+  --info-foreground: 35 78 166;
+  --info-text: 35 78 166;
+  --info-icon: 59 111 216;
+
+  /* Pending / neutral status */
+  --pending: 117 106 119;
+  --pending-background: 244 239 245;
+  --pending-border: 216 205 217;
+  --pending-foreground: 87 77 89;
+  --neutral: 117 106 119;
+  --neutral-bg: 244 239 245;
+  --neutral-border: 216 205 217;
+
+  /* Form controls */
+  --input-background: 255 255 255;
+  --input-text: 24 24 27;
+  --input-placeholder: 161 161 170;
+  --input-disabled-bg: 244 244 245;
+  --input-disabled-text: 161 161 170;
+  --input-error-border: 196 61 85;
+  --input-error-ring: 196 61 85;
+
+  /* Channel colors (icons / badges only) */
+  --channel-whatsapp: 37 211 102;
+  --channel-telegram: 34 158 217;
+  --channel-email: 109 91 208;
+  --channel-sms: 230 138 42;
+  --channel-webhook: 116 62 124;
+  --channel-api: 91 45 102;
+
+  /* Chart colors */
+  --chart-1: 116 62 124;
+  --chart-2: 91 45 102;
+  --chart-3: 59 111 216;
+  --chart-4: 230 138 92;
+  --chart-5: 22 135 95;
+  --chart-6: 185 154 196;
+  --chart-7: 196 122 22;
+  --chart-8: 196 61 85;
+
+  /* Gradients (CSS only — not for React inline) */
+  --gradient-brand: linear-gradient(135deg, #211026 0%, #321a39 38%, #46234d 68%, #5b2a63 100%);
+  --gradient-signature: linear-gradient(120deg, #321a39 0%, #4a2552 62%, #5b2a63 100%);
+  --gradient-soft-bg: linear-gradient(145deg, #fafafa 0%, #f5f5f5 48%, #f0eeee 100%);
+  --gradient-accent-glow: radial-gradient(circle, rgb(24 24 27 / 0.06) 0%, rgb(24 24 27 / 0) 72%);
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* Shadows — decisive, crisp, corporate (not soft/airy) */
+  --shadow-xs: 0 1px 2px rgb(24 24 27 / 0.06);
+  --shadow-sm: 0 1px 3px rgb(24 24 27 / 0.1), 0 1px 2px rgb(24 24 27 / 0.06);
+  --shadow-md: 0 4px 6px -2px rgb(24 24 27 / 0.08), 0 2px 4px -2px rgb(24 24 27 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(24 24 27 / 0.12), 0 4px 6px -4px rgb(24 24 27 / 0.08);
+  --shadow-dialog: 0 20px 25px -5px rgb(9 9 11 / 0.18), 0 8px 10px -6px rgb(9 9 11 / 0.12);
+  --shadow-focus: 0 0 0 3px rgb(116 62 124 / 0.28);
+
+  /* Motion */
+  --motion-fast: 120ms;
+  --motion-ui: 180ms;
+  --motion-panel: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Z-index layers */
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-dropdown: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-debug: 600;
+
+  /* Layout dimensions */
+  --sidebar-width: 280px;
+  --sidebar-collapsed: 84px;
+  --topbar-height: 72px;
+  --content-max-analytics: 1600px;
+  --content-max-forms: 1200px;
+  --form-max: 720px;
+  --auth-form-max: 440px;
+
+  /* Overlay */
+  --overlay: rgb(9 9 11 / 0.5);
+  --overlay-strong: rgb(9 9 11 / 0.66);
+
+  /*
+   * Legacy aliases — gradual migration.
+   * Prefer semantic tokens (text-primary, surface-muted, brand-*) in new code.
+   */
+  --page-bg: rgb(var(--canvas));
+  --text-strong: rgb(var(--text-primary));
+  --text-muted: rgb(var(--text-muted));
+  --brand-primary: rgb(var(--brand-900));
+  --brand-primary-soft: rgb(var(--brand-100));
+  --color-primary-100: rgb(var(--brand-100));
+  --color-primary-200: rgb(var(--brand-200));
+
+  /* Hex export for non-Tailwind consumers (e.g. Inertia progress) */
+  --brand-900-hex: #2A142F;
+  --brand-700-hex: #4A2451;
+  --brand-600-hex: #743E7C;
+
+  /* Sidebar shell (shadcn-compatible) */
+  --sidebar-background: var(--surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand-700);
+  --sidebar-primary-foreground: var(--inverse);
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-900);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-ui: 0ms;
+    --motion-panel: 0ms;
+  }
+}

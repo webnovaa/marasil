@@ -1,0 +1,47 @@
+# Production overlay: no Postgres/Redis/WhatsApp ports published.
+# Build frontend on the host/CI before deploy: (cd apps/platform && npm run build)
+# Vite and MinIO stay on the "dev" profile only (see compose.yaml).
+# Use: COMPOSE_PROFILES=prod COMPOSE_FILE=compose.yaml:compose.prod.yaml docker compose up --build -d
+
+services:
+  nginx:
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    volumes: !reset []
+
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    volumes: !reset []
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    volumes: !reset []
+
+  whatsapp-service:
+    restart: unless-stopped
+    environment:
+      PORT: 3100
+      LOG_LEVEL: ${WA_LOG_LEVEL:-info}
+      WORKER_ID: ${WA_WORKER_ID:-wa-worker-1}
+      NODE_ENV: production
+      INTERNAL_HMAC_SECRET: ${INTERNAL_HMAC_SECRET:?INTERNAL_HMAC_SECRET is required}
+      SESSION_MASTER_KEY: ${SESSION_MASTER_KEY:-}
+      SOCKET_TOKEN_SECRET: ${SOCKET_TOKEN_SECRET:-}
+      WHATSAPP_ENGINE: baileys
+
+  postgres:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped

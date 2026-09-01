@@ -1,0 +1,69 @@
+# OS/environment
+.env
+.env.*
+!.env.example
+apps/platform/.env
+apps/platform/.env.*
+!apps/platform/.env.example
+apps/whatsapp-service/.env
+apps/whatsapp-service/.env.*
+
+# Dependencies
+**/vendor/
+**/node_modules/
+
+# Build artifacts
+**/dist/
+**/build/
+apps/platform/public/build/
+apps/platform/public/hot
+apps/platform/bootstrap/cache/*.php
+!apps/platform/bootstrap/cache/.gitignore
+
+# Laravel storage (keep structure via .gitignore in app)
+apps/platform/storage/logs/*
+apps/platform/storage/framework/cache/*
+apps/platform/storage/framework/sessions/*
+apps/platform/storage/framework/views/*
+apps/platform/storage/pail/
+apps/platform/storage/*.key
+!apps/platform/storage/**/.gitignore
+
+# Test / coverage
+.phpunit.result.cache
+.phpunit.cache
+coverage/
+*.lcov
+playwright-report/
+test-results/
+
+# IDE / OS
+.idea/
+.vscode/
+.fleet/
+.zed/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Docker / local volumes & backups
+storage/backups/*
+!storage/backups/.gitkeep
+*.sql
+*.sql.gz
+*.dump
+docker-data/
+volumes/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets & credentials
+*.pem
+*.p12
+auth.json
+credentials.json

@@ -1,0 +1,48 @@
+# Development overlay: ports + I/O performance (Windows-friendly).
+# Use: docker compose -f compose.yaml -f compose.dev.yaml --profile dev up -d
+#
+# vendor/ and node_modules/ live on Linux Docker volumes (not the Windows bind mount)
+# so PHP/Vite avoid reading ~15k+ small files through C:\ on every request.
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  api:
+    volumes:
+      - platform_vendor:/var/www/html/vendor
+
+  horizon:
+    volumes:
+      - platform_vendor:/var/www/html/vendor
+
+  scheduler:
+    volumes:
+      - platform_vendor:/var/www/html/vendor
+
+  vite:
+    volumes:
+      - platform_node_modules:/var/www/html/node_modules
+    command: >
+      sh -c "
+        if [ ! -f node_modules/.install-done ]; then
+          echo 'Installing npm dependencies into Docker volume...';
+          npm install && touch node_modules/.install-done;
+        fi &&
+        npm run dev -- --host 0.0.0.0 --port 5173
+      "
+
+  whatsapp-service:
+    ports:
+      - "${WHATSAPP_SERVICE_PORT:-3100}:3100"
+    environment:
+      NODE_ENV: development
+
+volumes:
+  platform_vendor:
+  platform_node_modules:

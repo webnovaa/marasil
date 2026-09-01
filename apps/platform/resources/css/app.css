@@ -1,0 +1,227 @@
+@import '@fontsource/ibm-plex-sans-arabic/arabic-400.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-500.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-600.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-700.css';
+@import '@fontsource/ibm-plex-sans-arabic/latin-400.css';
+@import '@fontsource/ibm-plex-sans-arabic/latin-500.css';
+@import '@fontsource/ibm-plex-sans-arabic/latin-600.css';
+@import '@fontsource/ibm-plex-sans-arabic/latin-700.css';
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
+
+@import '../js/DesignSystem/tokens.css';
+@import '../js/DesignSystem/typography.css';
+@import '../js/DesignSystem/admin-shell.css';
+@import '../js/DesignSystem/tenant-shell.css';
+@import '../js/DesignSystem/auth-shell.css';
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.ts';
+@source '../**/*.tsx';
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-dialog: var(--shadow-dialog);
+  --shadow-focus: var(--shadow-focus);
+
+  /* Brand — Aubergine */
+  --color-brand-50: rgb(var(--brand-50));
+  --color-brand-100: rgb(var(--brand-100));
+  --color-brand-200: rgb(var(--brand-200));
+  --color-brand-300: rgb(var(--brand-300));
+  --color-brand-400: rgb(var(--brand-400));
+  --color-brand-500: rgb(var(--brand-500));
+  --color-brand-600: rgb(var(--brand-600));
+  --color-brand-700: rgb(var(--brand-700));
+  --color-brand-800: rgb(var(--brand-800));
+  --color-brand-900: rgb(var(--brand-900));
+  --color-brand-950: rgb(var(--brand-950));
+
+  /* Temporary migration aliases: primary-* → brand-* */
+  --color-primary-50: rgb(var(--brand-50));
+  --color-primary-100: rgb(var(--brand-100));
+  --color-primary-200: rgb(var(--brand-200));
+  --color-primary-300: rgb(var(--brand-300));
+  --color-primary-400: rgb(var(--brand-400));
+  --color-primary-500: rgb(var(--brand-500));
+  --color-primary-600: rgb(var(--brand-600));
+  --color-primary-700: rgb(var(--brand-700));
+  --color-primary-800: rgb(var(--brand-800));
+  --color-primary-900: rgb(var(--brand-900));
+  --color-primary-950: rgb(var(--brand-950));
+
+  /* Accent — Electric Lime */
+  --color-accent-50: rgb(var(--accent-50));
+  --color-accent-100: rgb(var(--accent-100));
+  --color-accent-200: rgb(var(--accent-200));
+  --color-accent-300: rgb(var(--accent-300));
+  --color-accent-400: rgb(var(--accent-400));
+  --color-accent-500: rgb(var(--accent-500));
+  --color-accent-600: rgb(var(--accent-600));
+  --color-accent-700: rgb(var(--accent-700));
+  --color-accent-800: rgb(var(--accent-800));
+  --color-accent-900: rgb(var(--accent-900));
+  --color-accent-950: rgb(var(--accent-950));
+
+  /* Warm neutrals */
+  --color-neutral-0: rgb(var(--neutral-0));
+  --color-neutral-50: rgb(var(--neutral-50));
+  --color-neutral-100: rgb(var(--neutral-100));
+  --color-neutral-200: rgb(var(--neutral-200));
+  --color-neutral-300: rgb(var(--neutral-300));
+  --color-neutral-400: rgb(var(--neutral-400));
+  --color-neutral-500: rgb(var(--neutral-500));
+  --color-neutral-600: rgb(var(--neutral-600));
+  --color-neutral-700: rgb(var(--neutral-700));
+  --color-neutral-800: rgb(var(--neutral-800));
+  --color-neutral-900: rgb(var(--neutral-900));
+  --color-neutral-950: rgb(var(--neutral-950));
+
+  /* Semantic surfaces & text */
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-canvas: rgb(var(--canvas));
+  --color-canvas-subtle: rgb(var(--canvas-subtle));
+  --color-surface: rgb(var(--surface));
+  --color-surface-raised: rgb(var(--surface-raised));
+  --color-surface-soft: rgb(var(--surface-soft));
+  --color-surface-muted: rgb(var(--surface-muted));
+  --color-surface-hover: rgb(var(--surface-hover));
+  --color-surface-pressed: rgb(var(--surface-pressed));
+  --color-surface-inverse: rgb(var(--surface-inverse));
+
+  --color-primary: rgb(var(--primary));
+  --color-primary-hover: rgb(var(--primary-hover));
+  --color-primary-active: rgb(var(--primary-active));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-hover: rgb(var(--secondary-hover));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+
+  --color-muted: rgb(var(--muted-surface));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+
+  --color-border: rgb(var(--border));
+  --color-border-subtle: rgb(var(--border-subtle));
+  --color-border-soft: rgb(var(--border-soft));
+  --color-border-strong: rgb(var(--border-strong));
+  --color-border-brand: rgb(var(--border-brand));
+  --color-border-focus: rgb(var(--border-focus));
+  --color-input: rgb(var(--input));
+
+  --color-ink: rgb(var(--text-primary));
+  --color-ink-muted: rgb(var(--text-muted));
+  --color-subtle: rgb(var(--subtle));
+  --color-text-primary: rgb(var(--text-primary));
+  --color-text-secondary: rgb(var(--text-secondary));
+  --color-text-muted: rgb(var(--text-muted));
+  --color-text-disabled: rgb(var(--text-disabled));
+  --color-text-inverse: rgb(var(--text-inverse));
+  --color-text-brand: rgb(var(--text-brand));
+  --color-text-accent: rgb(var(--text-accent));
+
+  --color-ring: rgb(var(--ring));
+
+  /* Semantic status */
+  --color-success: rgb(var(--success));
+  --color-success-background: rgb(var(--success-background));
+  --color-success-bg: rgb(var(--success-bg));
+  --color-success-border: rgb(var(--success-border));
+  --color-success-foreground: rgb(var(--success-foreground));
+
+  --color-warning: rgb(var(--warning));
+  --color-warning-background: rgb(var(--warning-background));
+  --color-warning-bg: rgb(var(--warning-bg));
+  --color-warning-border: rgb(var(--warning-border));
+  --color-warning-foreground: rgb(var(--warning-foreground));
+
+  --color-danger: rgb(var(--danger));
+  --color-danger-background: rgb(var(--danger-background));
+  --color-danger-bg: rgb(var(--danger-bg));
+  --color-danger-border: rgb(var(--danger-border));
+  --color-danger-foreground: rgb(var(--danger-foreground));
+
+  --color-info: rgb(var(--info));
+  --color-info-background: rgb(var(--info-background));
+  --color-info-bg: rgb(var(--info-bg));
+  --color-info-border: rgb(var(--info-border));
+  --color-info-foreground: rgb(var(--info-foreground));
+
+  --color-pending: rgb(var(--pending));
+  --color-pending-background: rgb(var(--pending-background));
+  --color-pending-border: rgb(var(--pending-border));
+  --color-pending-foreground: rgb(var(--pending-foreground));
+
+  --color-neutral: rgb(var(--neutral));
+  --color-neutral-bg: rgb(var(--neutral-bg));
+
+  /* Channel & chart */
+  --color-channel-whatsapp: rgb(var(--channel-whatsapp));
+  --color-channel-telegram: rgb(var(--channel-telegram));
+  --color-channel-email: rgb(var(--channel-email));
+  --color-channel-sms: rgb(var(--channel-sms));
+  --color-channel-webhook: rgb(var(--channel-webhook));
+  --color-channel-api: rgb(var(--channel-api));
+
+  --color-chart-1: rgb(var(--chart-1));
+  --color-chart-2: rgb(var(--chart-2));
+  --color-chart-3: rgb(var(--chart-3));
+  --color-chart-4: rgb(var(--chart-4));
+  --color-chart-5: rgb(var(--chart-5));
+  --color-chart-6: rgb(var(--chart-6));
+  --color-chart-7: rgb(var(--chart-7));
+  --color-chart-8: rgb(var(--chart-8));
+}
+
+@layer base {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text-strong);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+  }
+}
+
+/* Motion utilities are intentionally inert — corporate, static UI (no entrance/hover motion). */
+.animate-fade-up,
+.animate-fade-up-delayed,
+.animate-soft-pulse,
+.animate-drift,
+.stagger-1,
+.stagger-2,
+.stagger-3,
+.stagger-4,
+.stagger-5 {
+  animation: none !important;
+  animation-delay: 0ms !important;
+}

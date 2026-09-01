@@ -1,0 +1,179 @@
+# =============================================================================
+# Marasil | مراسيل — تعليمات Docker
+# =============================================================================
+# المتطلبات: Docker Desktop (Windows/Mac) أو Docker Engine + Compose v2
+# المسار: جذر المشروع (WhatsApp-API-SaaS)
+# =============================================================================
+
+
+# ─── 1) أول تشغيل (Setup) ───────────────────────────────────────────────────
+
+# Windows (PowerShell) — يولّد الأسرار، يبني، يشغّل، migrate:
+powershell -ExecutionPolicy Bypass -File docker/scripts/setup.ps1
+
+# Windows — أسرع أداء: انقل المشروع إلى WSL2 (بعد: wsl --install Ubuntu):
+powershell -ExecutionPolicy Bypass -File docker/scripts/setup-wsl.ps1
+
+# Linux / macOS / Git Bash:
+make setup
+
+# يدوياً (أي نظام):
+cp .env.example .env
+# عدّل .env: DB_PASSWORD, REDIS_PASSWORD, INTERNAL_HMAC_SECRET
+copy .env apps/platform/.env          # Windows
+# cp .env apps/platform/.env          # Linux/Mac
+
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev up --build -d
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api composer install
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan key:generate --force
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan migrate --force
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan db:seed --force
+
+
+# ─── 2) أوامر يومية ─────────────────────────────────────────────────────────
+
+# تشغيل (بدون rebuild):
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev up -d
+
+# إيقاف:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev down
+
+# إيقاف + حذف volumes (⚠️ يمسح قاعدة البيانات):
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev down -v
+
+# إعادة بناء صورة واحدة:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev build api
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev build whatsapp-service
+
+# إعادة بناء الكل وتشغيل:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev up --build -d
+
+# حالة الحاويات:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev ps
+
+# سجلات (كل الخدمات):
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev logs -f --tail=200
+
+# سجلات خدمة واحدة:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev logs -f api
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev logs -f whatsapp-service
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev logs -f nginx
+
+
+# ─── 3) Laravel داخل الحاوية (api) ──────────────────────────────────────────
+
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec api bash
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan migrate --force
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan db:seed --force
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan test
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan horizon:status
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan cache:clear
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T api php artisan config:clear
+
+# مزامنة .env من الجذر إلى Laravel:
+copy .env apps\platform\.env            # Windows
+# cp .env apps/platform/.env            # Linux/Mac
+
+
+# ─── 4) Frontend ──────────────────────────────────────────────────────────────
+
+# Vite يعمل تلقائياً في حاوية vite (dev).
+# بناء assets للإنتاج (خارج Docker أو مرة واحدة):
+cd apps/platform
+npm install
+npm run build
+cd ../..
+
+# تأكد من عدم وجود public/hot بعد build (يسبب مشاكل assets):
+del apps\platform\public\hot             # Windows
+# rm -f apps/platform/public/hot         # Linux/Mac
+
+
+# ─── 5) فحص الصحة ───────────────────────────────────────────────────────────
+
+# من المتصفح أو curl:
+#   http://localhost:8080
+#   http://localhost:8080/up
+#   http://localhost:8080/api/v1/health
+#   http://localhost:5173          (Vite HMR)
+
+# Makefile (Linux/Mac/Git Bash):
+make health
+
+# إذا nginx يعطي 502 بعد restart:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev restart nginx
+
+
+# ─── 6) الخدمات (dev) ───────────────────────────────────────────────────────
+
+# nginx          → الويب + proxy لـ Socket.IO
+# api            → Laravel (php-fpm)
+# horizon        → Queue workers
+# scheduler      → Cron كل 60 ثانية
+# whatsapp-service → محرك WhatsApp + QR (Socket.IO)
+# postgres       → قاعدة البيانات
+# redis          → Cache + Queue + Session
+# vite           → HMR للفرونت (dev فقط)
+
+# لا MinIO — التخزين محلي: storage/app/private
+# لا Mailpit — البريد: MAIL_MAILER=log
+
+
+# ─── 7) Production (ملخص) ───────────────────────────────────────────────────
+
+# 1) cd apps/platform && npm run build
+# 2) عيّن أسرار الإنتاج في .env (APP_DEBUG=false, APP_ENV=production)
+# 3) اختياري S3: MEDIA_DISK=s3 + AWS_*
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod up --build -d
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan migrate --force
+
+
+# ─── 8) Backup قاعدة البيانات ─────────────────────────────────────────────────
+
+make backup
+# أو:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql
+
+
+# ─── 9) متغيرات .env المهمة ───────────────────────────────────────────────────
+
+# DB_PASSWORD              → postgres
+# REDIS_PASSWORD           → redis
+# INTERNAL_HMAC_SECRET     → Laravel ↔ whatsapp-service (base64 32-byte)
+# SESSION_MASTER_KEY       → تشفير جلسات WA (أو نفس INTERNAL_HMAC_SECRET)
+# FILESYSTEM_DISK=local    → تخزين محلي
+# MEDIA_DISK=local         → وسائط الرسائل
+# COMPOSE_PROFILES=dev
+
+# ─── 9b) حسابات التطوير (من السيدرات — ليست في .env) ─────────────────────────
+
+# بعد: docker compose ... exec -T api php artisan db:seed --force
+#   Super admin : +963900000000 / AdminPass123!
+#   Demo tenant : +963900000001 / DemoPass123!
+#   Admin       : http://localhost:8080/admin
+#   Tenant      : http://localhost:8080/tenant
+
+
+# ─── 10) alias مختصر (اختياري) ──────────────────────────────────────────────
+
+# PowerShell — أضف للجلسة:
+#   function dc { docker compose -f compose.yaml -f compose.dev.yaml --profile dev @args }
+#   dc up -d
+#   dc ps
+#   dc logs -f api
+
+# Bash — أضف لـ ~/.bashrc:
+#   alias dc='docker compose -f compose.yaml -f compose.dev.yaml --profile dev'
+#   dc up -d
+
+
+# ─── 11) مشاكل شائعة (Windows) ────────────────────────────────────────────────
+
+# touch(): Utime failed: Operation not permitted
+# السبب: bind mount من Windows لا يدعم touch() على storage/framework
+# الحل: volumes مدمجة في compose (platform_storage_framework/logs/bootstrap_cache)
+# بعد تعديل compose:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev up -d --force-recreate api horizon scheduler
+
+# nginx 502 بعد restart:
+docker compose -f compose.yaml -f compose.dev.yaml --profile dev restart nginx
