@@ -26,21 +26,15 @@ final class ApiKeyResource
             'expires_at' => $apiKey->expires_at?->toIso8601String(),
             'revoked_at' => $apiKey->revoked_at?->toIso8601String(),
             'created_at' => $apiKey->created_at?->toIso8601String(),
+            'can_reveal' => false,
         ];
 
-        $visibleKey = $plainTextKey ?? $apiKey->plainTextSecret();
-
-        if ($visibleKey !== null && $visibleKey !== '') {
-            $payload['secret'] = $visibleKey;
-            $payload['key'] = $visibleKey;
-            $payload['api_key'] = $visibleKey;
-        } elseif ($plainTextKey !== null) {
+        if ($plainTextKey !== null && $plainTextKey !== '') {
             $payload['secret'] = $plainTextKey;
             $payload['key'] = $plainTextKey;
             $payload['api_key'] = $plainTextKey;
+            $payload['can_reveal'] = true;
         }
-
-        $payload['can_reveal'] = ($visibleKey !== null && $visibleKey !== '') || $plainTextKey !== null;
 
         return $payload;
     }

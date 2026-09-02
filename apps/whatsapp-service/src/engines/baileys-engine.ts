@@ -2,9 +2,11 @@ import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, jidNormalize
 import { Boom } from '@hapi/boom';
 import type pino from 'pino';
 import { EncryptedAuthenticationStateRepository } from '../auth/authentication-state-repository.js';
-import type { DeviceContext, DeviceStatus, EngineEventHandler, SendTextCommand, SendTextResult, WhatsAppEngine } from './types.js';
+import type { DeviceContext, DeviceStatus, EngineEventHandler, PairingQr, SendTextCommand, SendTextResult, WhatsAppEngine } from './types.js';
 
-type Runtime = { context: DeviceContext; socket: WASocket; status: DeviceStatus; reconnects: number; stopped: boolean };
+const QR_TTL_SECONDS = 20;
+
+type Runtime = { context: DeviceContext; socket: WASocket; status: DeviceStatus; reconnects: number; stopped: boolean; pairingQr: (PairingQr & { expiresAt: number }) | null };
 
 export class BaileysWhatsAppEngine implements WhatsAppEngine {
   readonly name = 'baileys' as const;
@@ -18,25 +20,37 @@ export class BaileysWhatsAppEngine implements WhatsAppEngine {
   async startPairing(context: DeviceContext): Promise<void> { await this.open(context, false); }
   async restore(context: DeviceContext): Promise<boolean> { if (!await this.repository.exists(context.deviceId)) return false; await this.open(context, true); return true; }
   async getStatus(deviceId: string): Promise<DeviceStatus> { return this.runtimes.get(deviceId)?.status ?? 'disconnected'; }
+  getPairingQr(deviceId: string): PairingQr | null {
+    const runtime = this.runtimes.get(deviceId);
+    const pairing = runtime?.pairingQr;
+    if (!runtime || !pairing) return null;
+    const expiresIn = Math.ceil((pairing.expiresAt - Date.now()) / 1000);
+    if (expiresIn <= 0) { runtime.pairingQr = null; return null; }
+    return { qr: pairing.qr, expiresIn };
+  }
 
   private async open(context: DeviceContext, restoring: boolean): Promise<void> {
     await this.disconnect(context.deviceId);
     const { state, saveCreds } = await this.repository.load(context.tenantId, context.deviceId);
     const { version } = await fetchLatestBaileysVersion();
     const socket = makeWASocket({ auth: state, version, printQRInTerminal: false, markOnlineOnConnect: false, syncFullHistory: false, generateHighQualityLinkPreview: false, logger: this.logger.child({ component: 'baileys', device_ref: this.repository.integrityHash(context.deviceId) }) as never });
-    const runtime: Runtime = { context, socket, status: restoring ? 'reconnecting' : 'starting', reconnects: 0, stopped: false };
+    const runtime: Runtime = { context, socket, status: restoring ? 'reconnecting' : 'starting', reconnects: 0, stopped: false, pairingQr: null };
     this.runtimes.set(context.deviceId, runtime);
     await this.emit(restoring ? 'device.reconnecting' : 'device.starting', context);
     socket.ev.on('creds.update', async () => { await saveCreds(); await this.emit('device.session_updated', context); });
     socket.ev.on('connection.update', async ({ connection, lastDisconnect, qr }: Partial<ConnectionState>) => {
       if (runtime.stopped || this.runtimes.get(context.deviceId) !== runtime) return;
-      if (qr) { runtime.status = 'waiting_for_qr'; await this.emit('device.qr_ready', context, { qr, expires_in: 45 }); }
+      if (qr) {
+        runtime.pairingQr = { qr, expiresIn: QR_TTL_SECONDS, expiresAt: Date.now() + QR_TTL_SECONDS * 1000 };
+        runtime.status = 'waiting_for_qr';
+        await this.emit('device.qr_ready', context, { qr, expires_in: QR_TTL_SECONDS });
+      }
       if (connection === 'connecting') { runtime.status = 'connecting'; await this.emit('device.connecting', context); }
       if (connection === 'open') {
-        runtime.status = 'connected'; runtime.reconnects = 0;
+        runtime.pairingQr = null; runtime.status = 'connected'; runtime.reconnects = 0;
         await this.emit('device.connected', context, { phone_number: socket.user?.id ? jidNormalizedUser(socket.user.id).split('@')[0] : undefined, display_name: socket.user?.name });
       }
-      if (connection === 'close') await this.handleClose(runtime, lastDisconnect?.error);
+      if (connection === 'close') { runtime.pairingQr = null; await this.handleClose(runtime, lastDisconnect?.error); }
     });
     socket.ev.on('messages.update', async (updates: WAMessageUpdate[]) => {
       for (const update of updates) {

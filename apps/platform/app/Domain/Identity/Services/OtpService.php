@@ -47,7 +47,12 @@ final class OtpService
             ]);
         });
 
-        $this->channel->send($phoneE164, $code, $purpose->value);
+        $locale = $user?->preferred_locale ?? 'ar';
+        if (! in_array($locale, ['ar', 'en'], true)) {
+            $locale = 'ar';
+        }
+
+        $this->channel->send($phoneE164, $code, $purpose->value, $locale);
 
         return $verification;
     }
@@ -67,19 +72,19 @@ final class OtpService
 
         if ($verification === null) {
             throw ValidationException::withMessages([
-                'code' => ['رمز التحقق غير صالح أو منتهٍ.'],
+                'code' => [__('messages.otp.invalid_or_expired')],
             ]);
         }
 
         if ($verification->isExpired()) {
             throw ValidationException::withMessages([
-                'code' => ['انتهت صلاحية رمز التحقق.'],
+                'code' => [__('messages.otp.expired')],
             ]);
         }
 
         if (! $verification->hasAttemptsRemaining()) {
             throw ValidationException::withMessages([
-                'code' => ['تم تجاوز عدد محاولات التحقق المسموحة.'],
+                'code' => [__('messages.otp.too_many_attempts')],
             ]);
         }
 
@@ -88,7 +93,7 @@ final class OtpService
 
         if (! hash_equals($verification->code_hash, $this->hashCode($code))) {
             throw ValidationException::withMessages([
-                'code' => ['رمز التحقق غير صحيح.'],
+                'code' => [__('messages.otp.incorrect')],
             ]);
         }
 

@@ -37,7 +37,7 @@ const deviceParam = (value: string | string[]): string => Array.isArray(value) ?
 const context = (deviceId: string, body: unknown): DeviceContext => { const parsed = contextSchema.parse(body); return { deviceId, tenantId: parsed.tenant_id, leaseGeneration: parsed.lease_generation }; };
 const route = (operation: (req: express.Request) => Promise<unknown>) => async (req: express.Request, res: express.Response) => { try { res.status(202).json({ success: true, data: await operation(req) }); } catch (error) { if (error instanceof z.ZodError) { res.status(422).json({ success: false, error: { code: 'INVALID_COMMAND' } }); return; } logger.error({ err: error, request_id: req.header('X-Request-ID') }, 'Internal command failed'); res.status(503).json({ success: false, error: { code: 'ENGINE_UNAVAILABLE' } }); } };
 
-app.post('/internal/v1/devices/:deviceId/start', route(async (req) => { const ctx = context(deviceParam(req.params.deviceId), req.body); await engine.createSession(ctx); await engine.startPairing(ctx); return { device_id: ctx.deviceId, status: 'starting' }; }));
+app.post('/internal/v1/devices/:deviceId/start', route(async (req) => { const ctx = context(deviceParam(req.params.deviceId), req.body); await engine.startPairing(ctx); return { device_id: ctx.deviceId, status: 'starting' }; }));
 app.post('/internal/v1/devices/:deviceId/reconnect', route(async (req) => { const ctx = context(deviceParam(req.params.deviceId), req.body); const restored = await engine.restore(ctx); if (!restored) await engine.startPairing(ctx); return { device_id: ctx.deviceId, restored }; }));
 app.post('/internal/v1/devices/:deviceId/disconnect', route(async (req) => { await engine.disconnect(deviceParam(req.params.deviceId)); return { status: 'disconnected' }; }));
 app.post('/internal/v1/devices/:deviceId/logout', route(async (req) => { await engine.logout(deviceParam(req.params.deviceId)); return { status: 'logged_out' }; }));
@@ -54,7 +54,7 @@ const io = new SocketServer(server, { path: '/socket.io', cors: { origin: false 
 type SocketClaims = { tenant_id: string; user_id: string; device_id: string; purpose: 'device-realtime'; exp: number };
 function verifySocketToken(token: unknown): SocketClaims {
   if (typeof token !== 'string') throw new Error('missing token');
-  const [payload, signature] = token.split('.'); const secret = process.env.SOCKET_TOKEN_SECRET ?? '';
+  const [payload, signature] = token.split('.'); const secret = process.env.SOCKET_TOKEN_SECRET || process.env.INTERNAL_HMAC_SECRET || '';
   if (!payload || !signature || !secret) throw new Error('invalid token');
   const expected = createHmac('sha256', secret).update(payload).digest('base64url');
   const a = Buffer.from(expected); const b = Buffer.from(signature); if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error('invalid token');
@@ -63,7 +63,12 @@ function verifySocketToken(token: unknown): SocketClaims {
   return claims;
 }
 io.use((socket, next) => { try { socket.data.claims = verifySocketToken(socket.handshake.auth.token); next(); } catch { next(new Error('unauthorized')); } });
-io.on('connection', (socket) => { const claims = socket.data.claims as SocketClaims; void socket.join(`tenant:${claims.tenant_id}:device:${claims.device_id}`); });
+io.on('connection', async (socket) => {
+  const claims = socket.data.claims as SocketClaims;
+  await socket.join(`tenant:${claims.tenant_id}:device:${claims.device_id}`);
+  const pairing = engine.getPairingQr(claims.device_id);
+  if (pairing) socket.emit('device.qr_ready', { device_id: claims.device_id, qr: pairing.qr, expires_in: pairing.expiresIn, occurred_at: new Date().toISOString() });
+});
 
 engine.onEvent(async ({ type, context: ctx, payload = {} }) => {
   io.to(`tenant:${ctx.tenantId}:device:${ctx.deviceId}`).emit(type, { device_id: ctx.deviceId, ...payload, occurred_at: new Date().toISOString() });

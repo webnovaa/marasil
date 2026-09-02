@@ -65,7 +65,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'plans.manage', 'subscriptions.view', 'subscriptions.approve',
                 'subscriptions.extend', 'subscriptions.suspend',
                 'devices.view', 'devices.suspend', 'devices.diagnose',
-                'messages.view_metadata', 'billing.manage', 'support.manage', 'audit.view',
+                'messages.view_metadata', 'billing.manage', 'support.manage', 'audit.view', 'settings.manage',
             ])
             ->pluck('id');
         Role::query()->where('name', 'admin')->first()?->permissions()->sync($adminPerms);

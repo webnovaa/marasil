@@ -163,7 +163,6 @@ client.DefaultRequestHeaders.Authorization =
 var payload = new {
     ${lines.map((l) => {
         const [k, v] = l.split(': ');
-        const val = v.startsWith('"') ? v : v;
         return `${k.replace(/"/g, '')} = ${v}`;
     }).join(',\n    ')}
 };

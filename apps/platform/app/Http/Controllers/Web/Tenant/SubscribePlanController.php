@@ -60,11 +60,11 @@ final class SubscribePlanController extends Controller
         if ($created->status === SubscriptionRequestStatus::Approved) {
             return redirect()
                 ->route('tenant.dashboard')
-                ->with('success', 'تم تفعيل خطتك بنجاح. يمكنك البدء الآن.');
+                ->with('success', __('messages.flash.plan_activated'));
         }
 
         return redirect()
             ->route('tenant.subscription')
-            ->with('success', 'تم إرسال طلب الاشتراك. سيتم مراجعته من قبل الإدارة.');
+            ->with('success', __('messages.flash.subscription_request_sent'));
     }
 }

@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\V1\AdminUsersIndexController;
 use App\Http\Controllers\Api\Admin\V1\PlansController as AdminPlansController;
+use App\Http\Controllers\Api\Admin\V1\PlatformWhatsAppController;
+use App\Http\Controllers\Api\Admin\V1\SubscriptionsController as AdminSubscriptionsController;
+use App\Http\Controllers\Api\Admin\V1\SupportTicketsController as AdminSupportTicketsController;
+use App\Http\Controllers\Api\Admin\V1\TenantsController as AdminTenantsController;
 use App\Http\Controllers\Api\Admin\V1\SubscriptionRequestsController as AdminSubscriptionRequestsController;
 use App\Http\Controllers\Api\Admin\V1\UsersController as AdminUsersController;
 use App\Http\Controllers\Api\Internal\V1\WhatsAppEventsController;
@@ -102,6 +107,7 @@ Route::prefix('admin/v1')
     ->middleware(['auth:sanctum', EnsureAdmin::class])
     ->group(function (): void {
         Route::middleware(EnsurePermission::class.':users.view')->group(function (): void {
+            Route::get('users', AdminUsersIndexController::class);
             Route::get('users/pending', [AdminUsersController::class, 'pending']);
         });
 
@@ -112,10 +118,12 @@ Route::prefix('admin/v1')
 
         Route::middleware(EnsurePermission::class.':users.suspend')->group(function (): void {
             Route::post('users/{userUlid}/suspend', [AdminUsersController::class, 'suspend']);
+            Route::patch('tenants/{tenantUlid}/status', [AdminTenantsController::class, 'updateStatus']);
         });
 
         Route::middleware(EnsurePermission::class.':subscriptions.view')->group(function (): void {
             Route::get('subscription-requests', [AdminSubscriptionRequestsController::class, 'index']);
+            Route::get('subscription-requests/{requestUlid}/payment-proof', [AdminSubscriptionRequestsController::class, 'paymentProof']);
         });
 
         Route::middleware(EnsurePermission::class.':subscriptions.approve')->group(function (): void {
@@ -123,10 +131,37 @@ Route::prefix('admin/v1')
             Route::post('subscription-requests/{requestUlid}/reject', [AdminSubscriptionRequestsController::class, 'reject']);
         });
 
+        Route::middleware(EnsurePermission::class.':subscriptions.extend')->group(function (): void {
+            Route::post('subscriptions/{subscriptionUlid}/extend', [AdminSubscriptionsController::class, 'extend']);
+        });
+
+        Route::middleware(EnsurePermission::class.':subscriptions.suspend')->group(function (): void {
+            Route::post('subscriptions/{subscriptionUlid}/suspend', [AdminSubscriptionsController::class, 'suspend']);
+            Route::post('subscriptions/{subscriptionUlid}/cancel', [AdminSubscriptionsController::class, 'cancel']);
+        });
+
+        Route::middleware(EnsurePermission::class.':support.manage')->prefix('support-tickets')->group(function (): void {
+            Route::get('{ticketUlid}', [AdminSupportTicketsController::class, 'show']);
+            Route::post('{ticketUlid}/reply', [AdminSupportTicketsController::class, 'reply']);
+            Route::patch('{ticketUlid}', [AdminSupportTicketsController::class, 'update']);
+        });
+
         Route::middleware(EnsurePermission::class.':plans.manage')->group(function (): void {
             Route::get('plans', [AdminPlansController::class, 'index']);
             Route::post('plans', [AdminPlansController::class, 'store']);
             Route::patch('plans/{plan}', [AdminPlansController::class, 'update']);
             Route::delete('plans/{plan}', [AdminPlansController::class, 'destroy']);
+        });
+
+        Route::middleware(EnsurePermission::class.':settings.manage')->prefix('platform-whatsapp')->group(function (): void {
+            Route::get('/', [PlatformWhatsAppController::class, 'show']);
+            Route::post('/setup', [PlatformWhatsAppController::class, 'setup']);
+            Route::patch('/', [PlatformWhatsAppController::class, 'update']);
+            Route::post('/avatar', [PlatformWhatsAppController::class, 'uploadAvatar']);
+            Route::post('/connect', [PlatformWhatsAppController::class, 'connect']);
+            Route::post('/disconnect', [PlatformWhatsAppController::class, 'disconnect']);
+            Route::post('/logout', [PlatformWhatsAppController::class, 'logout']);
+            Route::delete('/', [PlatformWhatsAppController::class, 'destroy']);
+            Route::post('/socket-token', [PlatformWhatsAppController::class, 'socketToken']);
         });
     });

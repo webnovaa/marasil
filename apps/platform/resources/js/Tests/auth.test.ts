@@ -28,7 +28,7 @@ const tenantUser: AuthUser = {
 describe('auth helpers', () => {
     it('returns role-aware dashboard labels', () => {
         expect(dashboardLabel(adminUser)).toBe('لوحة الإدارة');
-        expect(dashboardLabel(tenantUser)).toBe('الداشبورد');
+        expect(dashboardLabel(tenantUser)).toBe('لوحة العميل');
     });
 
     it('returns home paths from shared auth', () => {

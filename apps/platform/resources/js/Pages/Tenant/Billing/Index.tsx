@@ -1,7 +1,9 @@
+import { Link } from '@inertiajs/react';
 import { CreditCard } from 'lucide-react';
 import { TenantEmptyState } from '@/Components/patterns/tenant/TenantEmptyState';
 import { TenantPanel } from '@/Components/patterns/tenant/TenantPanel';
 import { Badge } from '@/Components/ui/Badge';
+import { useI18n } from '@/i18n';
 import TenantShell from '@/Layouts/TenantShell';
 
 type Invoice = {
@@ -18,23 +20,25 @@ type Props = {
 };
 
 export default function BillingIndex({ invoices }: Props) {
+    const { t, locale } = useI18n();
+
     return (
-        <TenantShell title="الفوترة" description="فواتير يدوية وإثبات دفع. لا بوابة بطاقات في الإصدار الحالي.">
-            <TenantPanel title="الفواتير" flush>
+        <TenantShell title={t('tenant.billing.title')} description={t('tenant.billing.description')}>
+            <TenantPanel title={t('tenant.billing.invoices')} flush>
                 {invoices.length === 0 ? (
                     <TenantEmptyState
                         icon={CreditCard}
-                        title="لا فواتير بعد"
-                        description="تصدر الفواتير عند الموافقة على خطة مدفوعة من الإدارة."
+                        title={t('tenant.billing.emptyTitle')}
+                        description={t('tenant.billing.emptyDescription')}
                     />
                 ) : (
                     <ul className="tenant-list">
                         {invoices.map((invoice) => (
                             <li key={invoice.id} className="tenant-list__item">
                                 <div>
-                                    <p className="tenant-list__primary">{invoice.number}</p>
+                                    <Link href={`/billing/${invoice.id}`} className="tenant-list__primary hover:underline">{invoice.number}</Link>
                                     <p className="tenant-list__secondary">
-                                        {(invoice.amount_minor / 100).toLocaleString('ar')} {invoice.currency}
+                                        {(invoice.amount_minor / 100).toLocaleString(locale)} {invoice.currency}
                                     </p>
                                 </div>
                                 <Badge>{invoice.status}</Badge>

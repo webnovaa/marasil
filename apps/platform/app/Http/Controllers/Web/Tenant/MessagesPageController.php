@@ -20,19 +20,37 @@ final class MessagesPageController extends Controller
         $user = $request->user();
         $tenant = $user->primaryTenant();
 
-        $messages = $tenant
-            ? Message::query()
-                ->where('tenant_id', $tenant->id)
-                ->with('device')
-                ->orderByDesc('id')
-                ->limit(50)
-                ->get()
-                ->map(fn (Message $message): array => MessageResource::make($message))
-                ->all()
-            : [];
+        $status = (string) $request->query('status', '');
+        $search = trim((string) $request->query('search', ''));
+
+        $query = $tenant
+            ? Message::query()->where('tenant_id', $tenant->id)->with('device')->orderByDesc('id')
+            : null;
+
+        if ($query !== null && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        if ($query !== null && $search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('recipient_e164', 'like', '%'.$search.'%')
+                    ->orWhere('ulid', 'like', '%'.$search.'%');
+            });
+        }
+
+        $messages = $query?->paginate(25)->withQueryString();
 
         return Inertia::render('Tenant/Messages/Index', [
-            'messages' => $messages,
+            'messages' => $messages
+                ? $messages->getCollection()->map(fn (Message $m) => MessageResource::make($m))->values()
+                : [],
+            'filters' => ['status' => $status, 'search' => $search],
+            'pagination' => $messages ? [
+                'current_page' => $messages->currentPage(),
+                'last_page' => $messages->lastPage(),
+                'per_page' => $messages->perPage(),
+                'total' => $messages->total(),
+            ] : null,
         ]);
     }
 }

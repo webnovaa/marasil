@@ -75,6 +75,43 @@ final class TemplatesPageController extends Controller
             'is_current' => true,
         ]);
 
-        return back()->with('success', 'تم حفظ القالب كنسخة غير قابلة للتعديل.');
+        return back()->with('success', __('messages.flash.template_saved'));
+    }
+
+    public function addVersion(Request $request, string $templateUlid): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $tenant = $user->primaryTenant();
+        abort_if($tenant === null, 403);
+
+        $template = MessageTemplate::query()
+            ->where('ulid', $templateUlid)
+            ->where('tenant_id', $tenant->id)
+            ->firstOrFail();
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:4096'],
+        ]);
+
+        $currentVersion = (int) TemplateVersion::query()
+            ->where('message_template_id', $template->id)
+            ->max('version');
+
+        TemplateVersion::query()
+            ->where('message_template_id', $template->id)
+            ->update(['is_current' => false]);
+
+        preg_match_all('/\{\{([a-zA-Z0-9_]+)\}\}/', $data['body'], $matches);
+
+        TemplateVersion::query()->create([
+            'message_template_id' => $template->id,
+            'version' => $currentVersion + 1,
+            'body' => $data['body'],
+            'variables' => array_values(array_unique($matches[1] ?? [])),
+            'is_current' => true,
+        ]);
+
+        return back()->with('success', __('messages.flash.template_version_created'));
     }
 }

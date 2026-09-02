@@ -422,7 +422,7 @@ export default function ApiKeysIndex() {
                 confirmLabel="إلغاء المفتاح"
                 tone="danger"
                 loading={revoking}
-                onConfirm={() => revokeTarget && void revoke(revokeTarget.id)}
+                onConfirm={() => { if (revokeTarget) void revoke(revokeTarget.id); }}
             />
         </TenantShell>
     );

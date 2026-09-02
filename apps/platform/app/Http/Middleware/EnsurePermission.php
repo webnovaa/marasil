@@ -31,7 +31,7 @@ final class EnsurePermission
             }
 
             return redirect($user->homeDashboardPath())
-                ->with('error', 'ليس لديك الصلاحية المطلوبة لهذا الإجراء.');
+                ->with('error', __('messages.access.permission_denied'));
         }
 
         return $next($request);

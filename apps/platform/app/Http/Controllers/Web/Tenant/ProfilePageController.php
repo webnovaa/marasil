@@ -56,6 +56,6 @@ final class ProfilePageController extends Controller
 
         $request->session()->put('locale', $data['preferred_locale']);
 
-        return back()->with('success', 'تم حفظ الملف الشخصي.');
+        return back()->with('success', __('messages.flash.profile_saved'));
     }
 }

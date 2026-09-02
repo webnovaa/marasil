@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { AlertCircle, Clock } from 'lucide-react';
 import type { SharedSubscription } from '@/Lib/auth';
 import { cn } from '@/Lib/cn';
+import { useI18n } from '@/i18n';
 
 type PageProps = {
     subscription?: SharedSubscription | null;
@@ -34,6 +35,7 @@ function TenantAlert({
 
 export function SubscriptionGateBanner() {
     const page = usePage<PageProps>().props;
+    const { t } = useI18n();
     const pathname = usePage().url.split('?')[0] ?? '/';
     const subscription = page.subscription;
     const flashError = page.flash?.error;
@@ -70,11 +72,11 @@ export function SubscriptionGateBanner() {
                 icon={Clock}
                 action={
                     <Link href="/subscription" className="tenant-alert__link">
-                        متابعة الطلب
+                        {t('subscriptionGate.trackRequest')}
                     </Link>
                 }
             >
-                طلب اشتراكك قيد المراجعة. يمكنك متابعة الحالة من صفحة الاشتراك.
+                {t('subscriptionGate.pendingReview')}
             </TenantAlert>
         );
     }
@@ -82,8 +84,7 @@ export function SubscriptionGateBanner() {
     if (pathname === '/plans') {
         return (
             <TenantAlert tone="info" icon={AlertCircle} stack>
-                {flashError ??
-                    'لا يوجد اشتراك فعّال على حسابك. اختر خطة أدناه وأرسل طلب اشتراك للمتابعة.'}
+                {flashError ?? t('subscriptionGate.noActiveOnPlans')}
             </TenantAlert>
         );
     }
@@ -102,11 +103,11 @@ export function SubscriptionGateBanner() {
             icon={AlertCircle}
             action={
                 <Link href="/plans" className="tenant-alert__link">
-                    اختيار خطة
+                    {t('subscriptionGate.choosePlan')}
                 </Link>
             }
         >
-            {flashError ?? 'لا يوجد اشتراك فعّال. اختر خطة اشتراك للوصول إلى الأجهزة وواجهة API.'}
+            {flashError ?? t('subscriptionGate.noActiveChoosePlan')}
         </TenantAlert>
     );
 }

@@ -29,11 +29,16 @@ final class EnsureTenantArea
             return $next($request);
         }
 
+        if ($request->routeIs('tenant.plans', 'tenant.plans.subscribe', 'tenant.subscription')
+            && ($user->isTenantUser() || $user->primaryTenant() !== null)) {
+            return $next($request);
+        }
+
         if ($this->wantsJsonResponse($request)) {
             return $this->deny($request, 'FORBIDDEN', 'Tenant access required.', 403);
         }
 
         return redirect($user->homeDashboardPath())
-            ->with('error', 'لا يمكنك الوصول إلى منطقة العميل. أكمل إعداد حسابك أو اشتراكك أولاً.');
+            ->with('error', __('messages.access.tenant_denied'));
     }
 }

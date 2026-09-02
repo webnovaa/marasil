@@ -18,7 +18,7 @@ import {
     useSidebar,
 } from '@/Components/ui/Sidebar';
 import {
-    TENANT_NAV_GROUPS,
+    getTenantNavGroups,
     isTenantNavActive,
 } from '@/Components/patterns/tenant/tenant-nav';
 import { BrandLogo } from '@/Components/brand/BrandLogo';
@@ -26,18 +26,23 @@ import { BrandMark } from '@/Components/brand/BrandMark';
 import { brand } from '@/DesignSystem/themes';
 import type { SharedAuth, SharedSubscription } from '@/Lib/auth';
 import { cn } from '@/Lib/cn';
+import { useI18n } from '@/i18n';
+import type { Locale } from '@/i18n';
 
 type PageProps = {
     appName?: string;
     auth?: SharedAuth;
     subscription?: SharedSubscription | null;
+    locale?: Locale;
 };
 
 export function TenantSidebar() {
     const page = usePage<PageProps>().props;
+    const { t } = useI18n();
     const appName = page.appName ?? brand.defaultDisplayName;
     const user = page.auth?.user ?? null;
     const subscription = page.subscription;
+    const navGroups = getTenantNavGroups(page.locale === 'en' ? 'en' : 'ar');
     const pathname = usePage().url.split('?')[0] ?? '/tenant';
     const { state, isMobile, setOpenMobile } = useSidebar();
     const collapsed = state === 'collapsed';
@@ -53,13 +58,13 @@ export function TenantSidebar() {
                         ) : (
                             <div className="min-w-0">
                                 <BrandLogo appName={appName} href="/tenant" />
-                                <p className="truncate text-caption text-[rgb(var(--muted))]">لوحة العميل</p>
+                                <p className="truncate text-caption text-[rgb(var(--muted))]">{t('shell.tenantPanel')}</p>
                             </div>
                         )}
                     </div>
                     {isMobile ? (
                         <IconButton
-                            label="إغلاق القائمة"
+                            label={t('shell.closeMenu')}
                             variant="ghost"
                             size="icon-sm"
                             className="shrink-0"
@@ -74,7 +79,7 @@ export function TenantSidebar() {
             <SidebarSeparator />
 
             <SidebarContent className="gap-1 px-1">
-                {TENANT_NAV_GROUPS.map((group) => (
+                {navGroups.map((group) => (
                     <SidebarGroup key={group.id} className="py-1">
                         <SidebarGroupLabel className="text-caption uppercase tracking-[0.08em]">
                             {group.label}
@@ -96,7 +101,7 @@ export function TenantSidebar() {
                                                 tooltip={
                                                     collapsed
                                                         ? locked
-                                                            ? `${item.title} — يلزم اشتراك`
+                                                            ? t('shell.subscriptionRequired', { title: item.title })
                                                             : item.title
                                                         : undefined
                                                 }
@@ -131,7 +136,7 @@ export function TenantSidebar() {
                     </div>
                     <div className="min-w-0 group-data-[collapsible=icon]/sidebar:hidden">
                         <p className="truncate text-sm font-semibold text-[rgb(var(--text))]">
-                            {user?.full_name ?? 'عميل مراسيل'}
+                            {user?.full_name ?? t('shell.defaultTenant')}
                         </p>
                         <p className="truncate text-caption text-[rgb(var(--muted))]" dir="ltr">
                             {user?.phone_e164 ?? '—'}
@@ -146,13 +151,13 @@ export function TenantSidebar() {
                 {user?.can_access_admin ? (
                     <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
                         <LinkButton href="/admin" variant="secondary" size="sm" className="w-full">
-                            لوحة الإدارة
+                            {t('shell.adminArea')}
                         </LinkButton>
                     </div>
                 ) : null}
                 <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
                     <LinkButton href="/logout" method="post" as="button" variant="ghost" size="sm" className="w-full">
-                        تسجيل الخروج
+                        {t('shell.logout')}
                     </LinkButton>
                 </div>
             </SidebarFooter>

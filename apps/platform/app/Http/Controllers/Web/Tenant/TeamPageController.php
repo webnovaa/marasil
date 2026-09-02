@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Tenant;
 
 use App\Domain\Identity\Models\User;
-use App\Domain\Tenancy\Models\TeamInvite;
+use App\Domain\Tenancy\Enums\TenantMemberStatus;
 use App\Domain\Tenancy\Models\TenantMember;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +78,44 @@ final class TeamPageController extends Controller
             'expires_at' => now()->addDays(7),
         ]);
 
-        return back()->with('success', 'تم إنشاء الدعوة. يصل العضو عبر رمز OTP على رقمه.');
+        return back()->with('success', __('messages.flash.invite_created'));
+    }
+
+    public function cancelInvite(Request $request, string $inviteUlid): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $tenant = $user->primaryTenant();
+        abort_if($tenant === null, 403);
+
+        $invite = TeamInvite::query()
+            ->where('ulid', $inviteUlid)
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $invite->update(['status' => 'cancelled']);
+
+        return back()->with('success', __('messages.flash.invite_cancelled'));
+    }
+
+    public function removeMember(Request $request, int $memberId): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $tenant = $user->primaryTenant();
+        abort_if($tenant === null, 403);
+        abort_if((int) $tenant->owner_user_id !== (int) $user->id, 403);
+
+        $member = TenantMember::query()
+            ->where('id', $memberId)
+            ->where('tenant_id', $tenant->id)
+            ->firstOrFail();
+
+        abort_if((int) $member->user_id === (int) $user->id, 422, 'لا يمكن إزالة نفسك.');
+
+        $member->update(['status' => TenantMemberStatus::Suspended]);
+
+        return back()->with('success', __('messages.flash.member_removed'));
     }
 }

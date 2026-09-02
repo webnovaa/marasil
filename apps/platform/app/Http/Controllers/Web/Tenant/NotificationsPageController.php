@@ -83,6 +83,6 @@ final class NotificationsPageController extends Controller
             $data + ['security_critical_enabled' => true],
         );
 
-        return back()->with('success', 'تم حفظ التفضيلات.');
+        return back()->with('success', __('messages.flash.preferences_saved'));
     }
 }

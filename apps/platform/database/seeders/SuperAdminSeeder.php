@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Hash;
 
 class SuperAdminSeeder extends Seeder
 {
-    public const PHONE = '+963900000000';
+    public const PHONE = '+963980212933';
 
-    public const PASSWORD = 'AdminPass123!';
+    public const PASSWORD = 'webnova.m.w.2000';
 
     public function run(): void
     {
@@ -50,9 +50,11 @@ class SuperAdminSeeder extends Seeder
             );
 
             $role = Role::query()->where('name', 'super_admin')->first();
-            if ($role !== null) {
-                $user->roles()->syncWithoutDetaching([$role->id]);
+            if ($role === null) {
+                throw new \RuntimeException('super_admin role missing. Run RolesAndPermissionsSeeder first.');
             }
+
+            $user->roles()->syncWithoutDetaching([$role->id]);
 
             if ($user->ownedTenants()->doesntExist()) {
                 app(CreateTenantForOwner::class)->handle($user, 'Marasil Platform');

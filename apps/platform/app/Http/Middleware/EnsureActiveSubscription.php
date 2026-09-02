@@ -61,12 +61,12 @@ final class EnsureActiveSubscription
             : HomeDashboard::ONBOARDING_PATH;
 
         $message = $code === 'SUBSCRIPTION_REQUIRED'
-            ? 'لا يوجد اشتراك فعّال. اختر خطة اشتراك للمتابعة.'
-            : 'انتهى اشتراكك. جدّد اشتراكك أو أرسل طلب تجديد.';
+            ? __('messages.access.subscription_required')
+            : __('messages.access.subscription_expired');
 
         if (HomeDashboard::hasPendingSubscriptionRequest($tenant)) {
             $redirectPath = HomeDashboard::SUBSCRIPTION_PATH;
-            $message = 'طلب اشتراكك قيد المراجعة. يمكنك متابعة الحالة من صفحة الاشتراك.';
+            $message = __('messages.access.subscription_pending');
         }
 
         return redirect($redirectPath)->with('error', $message);
