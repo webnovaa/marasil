@@ -89,6 +89,11 @@ export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Pr
     return data;
 }
 
+export async function adminGet<T>(url: string, config?: AxiosRequestConfig): Promise<ApiEnvelope<T>> {
+    const { data } = await adminClient.get<ApiEnvelope<T>>(url, config);
+    return data;
+}
+
 export async function adminPost<T>(url: string, body?: unknown): Promise<ApiEnvelope<T>> {
     const { data } = await adminClient.post<ApiEnvelope<T>>(url, body);
     return data;

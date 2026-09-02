@@ -86,7 +86,10 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
     }, [deviceUlid]);
 
     const loadRef = useRef(load);
-    loadRef.current = load;
+
+    useEffect(() => {
+        loadRef.current = load;
+    }, [load]);
 
     const applyDevicePatch = useCallback((patch: Partial<Device>) => {
         setDevice((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -244,8 +247,12 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
         setError(null);
         try {
             const res = await apiPost<{ integration: Integration }>(`/devices/${deviceUlid}/rotate-api-key`, {});
-            if (!res.success || !res.data?.integration) {
+            if (!res.success) {
                 setError(res.error?.message ?? 'تعذر تجديد مفتاح الربط.');
+                return;
+            }
+            if (!res.data?.integration) {
+                setError('تعذر تجديد مفتاح الربط.');
                 return;
             }
             setIntegration(res.data.integration);
@@ -320,7 +327,7 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
                     tone: 'success',
                     message: `تم الإرسال بنجاح! معرّف الرسالة: ${res.data.message.id} (${res.data.message.status})`
                 });
-            } else {
+            } else if (!res.success) {
                 setTestResult({
                     tone: 'danger',
                     message: res.error?.message ?? 'فشل إرسال الرسالة.'

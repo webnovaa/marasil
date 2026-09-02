@@ -26,7 +26,7 @@ return [
 
     'contract_version' => '1',
 
-    'socket_token_secret' => (string) env('SOCKET_TOKEN_SECRET', env('INTERNAL_HMAC_SECRET', '')),
+    'socket_token_secret' => (string) (env('SOCKET_TOKEN_SECRET') ?: env('INTERNAL_HMAC_SECRET', '')),
 
     'socket_token_ttl_seconds' => (int) env('SOCKET_TOKEN_TTL_SECONDS', 600),
 

@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AuthLayout from '@/Layouts/AuthLayout';
 import { WhatsAppPhoneField } from '@/Components/patterns/WhatsAppPhoneField';
@@ -8,7 +8,12 @@ import { Input } from '@/Components/ui/Input';
 import { apiPost } from '@/Lib/api-client';
 import { isValidWhatsAppE164 } from '@/Lib/phone';
 
-export default function VerifyOtp() {
+type Props = {
+    resendCooldownSeconds: number;
+    initialResendSeconds: number;
+};
+
+export default function VerifyOtp({ resendCooldownSeconds, initialResendSeconds }: Props) {
     const phoneFromQuery = useMemo(() => {
         if (typeof window === 'undefined') {
             return '';
@@ -22,6 +27,17 @@ export default function VerifyOtp() {
     const [error, setError] = useState<string | null>(null);
     const [info, setInfo] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
+    const [resendSeconds, setResendSeconds] = useState(initialResendSeconds);
+
+    useEffect(() => {
+        if (resendSeconds <= 0) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => setResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+        return () => window.clearTimeout(timer);
+    }, [resendSeconds]);
 
     async function onSubmit(e: FormEvent) {
         e.preventDefault();
@@ -57,6 +73,10 @@ export default function VerifyOtp() {
     }
 
     async function resend() {
+        if (resendSeconds > 0 || resending) {
+            return;
+        }
+
         setInfo(null);
         setError(null);
         if (!isValidWhatsAppE164(phone)) {
@@ -64,11 +84,24 @@ export default function VerifyOtp() {
             return;
         }
         setPhoneError(undefined);
+        setResending(true);
         try {
             await apiPost('/auth/resend-otp', { phone_e164: phone, purpose: 'registration' });
             setInfo('إن وُجد حساب مطابق فسيتم إرسال رمز جديد.');
-        } catch {
-            setError('تعذر إعادة الإرسال الآن.');
+            setResendSeconds(resendCooldownSeconds);
+        } catch (err: unknown) {
+            const data = (err as {
+                response?: {
+                    data?: {
+                        message?: string;
+                        errors?: { phone_e164?: string[] };
+                    };
+                };
+            })?.response?.data;
+            setError(data?.errors?.phone_e164?.[0] ?? data?.message ?? 'تعذر إعادة الإرسال الآن.');
+            setResendSeconds(resendCooldownSeconds);
+        } finally {
+            setResending(false);
         }
     }
 
@@ -93,8 +126,17 @@ export default function VerifyOtp() {
                 <Button type="submit" className="w-full" loading={loading}>
                     تحقق
                 </Button>
-                <Button type="button" variant="secondary" className="w-full" onClick={() => void resend()}>
-                    إعادة إرسال الرمز
+                <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => void resend()}
+                    loading={resending}
+                    disabled={resendSeconds > 0}
+                >
+                    {resendSeconds > 0
+                        ? `إعادة الإرسال بعد ${resendSeconds} ثانية`
+                        : 'إعادة إرسال الرمز'}
                 </Button>
             </form>
         </AuthLayout>

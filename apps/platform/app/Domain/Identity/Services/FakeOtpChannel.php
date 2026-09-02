@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Log;
 
 final class FakeOtpChannel implements OtpChannel
 {
-    public function send(string $phoneE164, string $code, string $purpose): void
+    public function send(string $phoneE164, string $code, string $purpose, string $locale = 'ar'): void
     {
+        unset($locale);
         if ($this->shouldExposeForTests()) {
             Cache::put(
                 self::testCacheKey($phoneE164, $purpose),

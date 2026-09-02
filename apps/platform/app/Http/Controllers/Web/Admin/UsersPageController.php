@@ -4,28 +4,54 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Admin;
 
+use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\User;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class UsersPageController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
-        $users = User::query()
-            ->with('profile')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get()
-            ->map(fn (User $user): array => [
-                'id' => $user->ulid,
-                'full_name' => $user->profile?->full_name,
-                'phone_e164' => $user->phone_e164,
-                'status' => $user->status->value,
-                'created_at' => $user->created_at?->toIso8601String(),
-            ]);
+        abort_unless($request->user()?->hasPermission('users.view'), 403);
 
-        return Inertia::render('Admin/Users/Index', ['users' => $users]);
+        $search = trim((string) $request->query('search', ''));
+        $status = (string) $request->query('status', '');
+
+        $query = User::query()
+            ->with(['profile', 'roles'])
+            ->orderByDesc('id');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('phone_e164', 'like', '%'.$search.'%')
+                    ->orWhereHas('profile', fn ($p) => $p->where('full_name', 'like', '%'.$search.'%')
+                        ->orWhere('company_name', 'like', '%'.$search.'%'));
+            });
+        }
+
+        if ($status !== '' && UserStatus::tryFrom($status)) {
+            $query->where('status', $status);
+        }
+
+        $users = $query->paginate(20)->withQueryString();
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users->getCollection()->map(fn (User $user) => UserResource::make($user))->values(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
+            'statusOptions' => array_map(fn (UserStatus $s) => $s->value, UserStatus::cases()),
+            'pagination' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ],
+        ]);
     }
 }

@@ -9,5 +9,5 @@ interface OtpChannel
     /**
      * Dispatch an OTP to the given phone. Implementations must never log the raw code.
      */
-    public function send(string $phoneE164, string $code, string $purpose): void;
+    public function send(string $phoneE164, string $code, string $purpose, string $locale = 'ar'): void;
 }

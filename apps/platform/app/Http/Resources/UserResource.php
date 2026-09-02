@@ -27,6 +27,7 @@ final class UserResource
             'company_name' => $user->profile?->company_name,
             'roles' => $user->roles->pluck('name')->values()->all(),
             'tenant' => self::tenantSummary($user->primaryTenant()),
+            'created_at' => $user->created_at?->toIso8601String(),
         ];
     }
 

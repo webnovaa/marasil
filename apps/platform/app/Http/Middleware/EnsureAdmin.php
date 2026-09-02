@@ -32,7 +32,7 @@ final class EnsureAdmin
             }
 
             return redirect($user->homeDashboardPath())
-                ->with('error', 'ليس لديك صلاحية الوصول إلى لوحة الإدارة.');
+                ->with('error', __('messages.access.admin_denied'));
         }
 
         return $next($request);

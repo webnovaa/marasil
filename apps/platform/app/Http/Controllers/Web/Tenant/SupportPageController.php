@@ -69,6 +69,6 @@ final class SupportPageController extends Controller
             'is_staff' => false,
         ]);
 
-        return back()->with('success', 'تم فتح تذكرة الدعم.');
+        return back()->with('success', __('messages.flash.support_ticket_opened'));
     }
 }

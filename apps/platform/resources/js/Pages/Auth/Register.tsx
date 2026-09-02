@@ -10,8 +10,10 @@ import { Label } from '@/Components/ui/Label';
 import { PasswordInput } from '@/Components/ui/PasswordInput';
 import { apiPost } from '@/Lib/api-client';
 import { isValidWhatsAppE164 } from '@/Lib/phone';
+import { useI18n } from '@/i18n/useI18n';
 
 export default function Register() {
+    const { locale } = useI18n();
     const [fullName, setFullName] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [phone, setPhone] = useState('');
@@ -45,6 +47,7 @@ export default function Register() {
                 password,
                 password_confirmation: password,
                 terms_accepted: true,
+                preferred_locale: locale,
             });
 
             if (!res.success) {

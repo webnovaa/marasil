@@ -8,6 +8,7 @@ use App\Domain\ApiKeys\Models\ApiKey;
 use App\Domain\Devices\Enums\DeviceStatus;
 use App\Domain\Tenancy\Models\Tenant;
 use App\Support\Concerns\HasUlid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,9 +23,11 @@ class Device extends Model
     protected $fillable = [
         'tenant_id',
         'created_by',
+        'is_platform',
         'name',
         'phone_e164',
         'display_name',
+        'avatar_path',
         'provider',
         'status',
         'worker_id',
@@ -56,7 +59,18 @@ class Device extends Model
             'last_error_at' => 'datetime',
             'daily_limit_override' => 'integer',
             'settings' => 'array',
+            'is_platform' => 'boolean',
         ];
+    }
+
+    public function scopePlatform(Builder $query): Builder
+    {
+        return $query->where('is_platform', true);
+    }
+
+    public function scopeTenantOwned(Builder $query): Builder
+    {
+        return $query->where('is_platform', false);
     }
 
     public function tenant(): BelongsTo

@@ -64,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                     'permissions' => $user->permissionNames(),
                     'can_access_admin' => $user->canAccessAdminPanel(),
                     'can_access_tenant' => $user->canAccessTenantArea(),
+                    'preferred_locale' => $user->preferred_locale ?? 'ar',
                     'home_path' => $user->homeDashboardPath(),
                 ] : null,
             ],

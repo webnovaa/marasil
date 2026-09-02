@@ -20,13 +20,25 @@ final class DispatchDeviceCommand implements ShouldQueue
     public function __construct(
         public readonly string $deviceUlid,
         public readonly string $command,
+        public readonly ?int $leaseGeneration = null,
     ) {}
 
     public function handle(WhatsAppServiceClient $client): void
     {
-        $device = Device::query()->where('ulid', $this->deviceUlid)->first();
+        $query = Device::query();
+        if ($this->command === 'delete_session') {
+            $query->withTrashed();
+        }
+
+        $device = $query->where('ulid', $this->deviceUlid)->first();
 
         if ($device === null) {
+            return;
+        }
+
+        if ($this->command === 'create_session'
+            && $this->leaseGeneration !== null
+            && $device->lease_generation !== $this->leaseGeneration) {
             return;
         }
 
@@ -34,7 +46,7 @@ final class DispatchDeviceCommand implements ShouldQueue
             match ($this->command) {
                 'create_session' => $client->createSession($device->ulid, [
                     'tenant_id' => $device->tenant?->ulid,
-                    'lease_generation' => $device->lease_generation,
+                    'lease_generation' => $this->leaseGeneration ?? $device->lease_generation,
                 ]),
                 'disconnect' => $client->disconnect($device->ulid),
                 'logout' => $client->logout($device->ulid),

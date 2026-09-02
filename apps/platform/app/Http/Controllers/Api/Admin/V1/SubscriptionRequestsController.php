@@ -17,7 +17,9 @@ use App\Http\Resources\SubscriptionResource;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class SubscriptionRequestsController extends Controller
 {
@@ -107,6 +109,23 @@ final class SubscriptionRequestsController extends Controller
         return ApiResponse::success([
             'subscription_request' => SubscriptionRequestResource::make($updated),
         ]);
+    }
+
+    public function paymentProof(Request $request, string $requestUlid): StreamedResponse|JsonResponse
+    {
+        $this->authorize('viewAny', SubscriptionRequest::class);
+
+        $target = SubscriptionRequest::query()
+            ->where('ulid', $requestUlid)
+            ->firstOrFail();
+
+        $path = $target->payment_proof_path;
+
+        if ($path === null || ! Storage::disk('local')->exists($path)) {
+            return ApiResponse::error('NOT_FOUND', 'Payment proof not found.', 404);
+        }
+
+        return Storage::disk('local')->download($path, basename($path));
     }
 
     private function requestId(Request $request): string

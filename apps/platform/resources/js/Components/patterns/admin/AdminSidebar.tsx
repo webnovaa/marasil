@@ -17,16 +17,20 @@ import {
     SidebarSeparator,
     useSidebar,
 } from '@/Components/ui/Sidebar';
-import { ADMIN_NAV_GROUPS, isAdminNavActive } from '@/Components/patterns/admin/admin-nav';
+import { getAdminNavGroups, isAdminNavActive } from '@/Components/patterns/admin/admin-nav';
+import type { Locale } from '@/i18n';
+import { useI18n } from '@/i18n';
 import { BrandLogo } from '@/Components/brand/BrandLogo';
 import { BrandMark } from '@/Components/brand/BrandMark';
 import { brand } from '@/DesignSystem/themes';
 import type { SharedAuth } from '@/Lib/auth';
 
 export function AdminSidebar() {
-    const page = usePage<{ appName?: string; auth?: SharedAuth }>().props;
+    const page = usePage<{ appName?: string; auth?: SharedAuth; locale?: Locale }>().props;
+    const { t } = useI18n();
     const appName = page.appName ?? brand.defaultDisplayName;
     const user = page.auth?.user ?? null;
+    const navGroups = getAdminNavGroups(page.locale === 'en' ? 'en' : 'ar');
     const pathname = usePage().url.split('?')[0] ?? '/admin';
     const { state, isMobile, setOpenMobile } = useSidebar();
     const collapsed = state === 'collapsed';
@@ -41,13 +45,13 @@ export function AdminSidebar() {
                         ) : (
                             <div className="min-w-0">
                                 <BrandLogo appName={appName} href="/admin" />
-                                <p className="truncate text-caption text-[rgb(var(--muted))]">لوحة الإدارة</p>
+                                <p className="truncate text-caption text-[rgb(var(--muted))]">{t('shell.adminPanel')}</p>
                             </div>
                         )}
                     </div>
                     {isMobile ? (
                         <IconButton
-                            label="إغلاق القائمة"
+                            label={t('shell.closeMenu')}
                             variant="ghost"
                             size="icon-sm"
                             className="shrink-0"
@@ -62,7 +66,7 @@ export function AdminSidebar() {
             <SidebarSeparator />
 
             <SidebarContent className="gap-1 px-1">
-                {ADMIN_NAV_GROUPS.map((group) => (
+                {navGroups.map((group) => (
                     <SidebarGroup key={group.id} className="py-1">
                         <SidebarGroupLabel className="text-caption uppercase tracking-[0.08em]">
                             {group.label}
@@ -102,7 +106,7 @@ export function AdminSidebar() {
                     </div>
                     <div className="min-w-0 group-data-[collapsible=icon]/sidebar:hidden">
                         <p className="truncate text-sm font-semibold text-[rgb(var(--text))]">
-                            {user?.full_name ?? 'مسؤول المنصة'}
+                            {user?.full_name ?? t('shell.defaultAdmin')}
                         </p>
                         <p className="truncate text-caption text-[rgb(var(--muted))]" dir="ltr">
                             {user?.phone_e164 ?? '—'}
@@ -112,13 +116,13 @@ export function AdminSidebar() {
                 {user?.can_access_tenant ? (
                     <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
                         <LinkButton href={user?.home_path ?? '/tenant'} variant="secondary" size="sm" className="w-full">
-                            منطقة العميل
+                            {t('shell.tenantArea')}
                         </LinkButton>
                     </div>
                 ) : null}
                 <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
                     <LinkButton href="/logout" method="post" as="button" variant="ghost" size="sm" className="w-full">
-                        تسجيل الخروج
+                        {t('shell.logout')}
                     </LinkButton>
                 </div>
             </SidebarFooter>
