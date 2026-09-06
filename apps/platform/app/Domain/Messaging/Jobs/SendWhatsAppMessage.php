@@ -9,6 +9,7 @@ use App\Domain\Messaging\Enums\MessageStatus;
 use App\Domain\Messaging\Models\Message;
 use App\Domain\Messaging\Models\MessageAttempt;
 use App\Domain\Messaging\Models\MessageStatusEvent;
+use App\Domain\Messaging\Services\MessageTransportPayload;
 use App\Domain\Usage\Services\UsageMeter;
 use App\Domain\Webhooks\Actions\DispatchWebhookDelivery;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -79,7 +80,7 @@ final class SendWhatsAppMessage implements ShouldQueue
                 'lease_generation' => $device->lease_generation,
                 'message_id' => $message->ulid,
                 'recipient' => $message->recipient_e164,
-                'text' => $message->content_encrypted,
+                ...app(MessageTransportPayload::class)->content($message),
             ]);
 
             $data = is_array($result['data'] ?? null) ? $result['data'] : $result;

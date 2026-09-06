@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web\Tenant;
 use App\Domain\ApiKeys\Models\ApiKey;
 use App\Domain\Devices\Models\Device;
 use App\Domain\Identity\Models\User;
+use App\Domain\Messaging\Services\DashboardActivity;
 use App\Domain\Subscriptions\Actions\GetCurrentSubscription;
 use App\Domain\Usage\Services\UsageMeter;
 use App\Domain\Webhooks\Models\WebhookEndpoint;
@@ -44,6 +45,7 @@ final class DashboardPageController extends Controller
                 ? SubscriptionResource::make($subscription->loadMissing('plan'))
                 : null,
             'stats' => $stats,
+            'activity' => app(DashboardActivity::class)->forTenant($tenant),
         ]);
     }
 }

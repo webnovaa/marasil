@@ -1,6 +1,6 @@
 # Public & Admin API — هيكل OpenAPI 3.1
 
-> هيكل المرحلة 0. الملف التنفيذي الكامل يُولَّد لاحقًا في `packages/contracts/openapi.yaml` ويُزامَن مع Swagger UI.
+> المرجع الحالي هو `packages/contracts/openapi.json` ونسخته المطابقة `docs/openapi.yaml`، ويغطي 71 عملية فعلية. الجداول أدناه تخطيط تاريخي وقد تتضمن مسارات مستقبلية؛ اعتمد المرجع الحالي والكود. لا توجد حاليًا واجهة Swagger UI أو عملية auth/refresh منفّذة.
 
 ## أساسيات
 

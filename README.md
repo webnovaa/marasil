@@ -1,4 +1,4 @@
-# Wasil / راسل — WhatsApp API SaaS
+# Marasil / مراسيل — WhatsApp API SaaS
 
 منصة SaaS لربط أجهزة واتساب عبر QR واستخدام REST API لإرسال إشعارات مشروعة.
 
@@ -30,8 +30,8 @@ Copies `.env` if missing, builds images, starts the stack with `--profile dev`, 
 | App            | http://localhost:8080                    |
 | API health     | http://localhost:8080/api/v1/health      |
 | Vite HMR       | http://localhost:5173                    |
-| Mailpit        | http://localhost:8025                    |
-| MinIO console  | http://localhost:9001                    |
+
+Mailpit and MinIO are not bundled. Mail uses the log driver; media uses private local storage by default.
 
 ## أوامر مفيدة / Useful commands
 

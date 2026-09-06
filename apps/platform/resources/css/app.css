@@ -18,6 +18,7 @@
 @import '../js/DesignSystem/admin-shell.css';
 @import '../js/DesignSystem/tenant-shell.css';
 @import '../js/DesignSystem/auth-shell.css';
+@import '../js/DesignSystem/dashboard.css';
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

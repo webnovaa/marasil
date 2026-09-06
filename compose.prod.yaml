@@ -12,21 +12,24 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
-    volumes: !reset []
+    volumes: !override
+      - platform_private_storage:/var/www/html/storage/app
 
   horizon:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
-    volumes: !reset []
+    volumes: !override
+      - platform_private_storage:/var/www/html/storage/app
 
   scheduler:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
-    volumes: !reset []
+    volumes: !override
+      - platform_private_storage:/var/www/html/storage/app
 
   whatsapp-service:
     restart: unless-stopped
@@ -45,3 +48,6 @@ services:
 
   redis:
     restart: unless-stopped
+
+volumes:
+  platform_private_storage:

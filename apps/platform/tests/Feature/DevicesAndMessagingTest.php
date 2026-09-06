@@ -240,4 +240,48 @@ final class DevicesAndMessagingTest extends TestCase
     {
         return $this->withHeader('Authorization', 'Bearer '.$apiKey);
     }
+
+    public function test_media_is_sent_as_file_bytes_and_replays_do_not_resend(): void
+    {
+        [, $tenant] = $this->createTenantUserWithSubscription();
+        Subscription::query()->where('tenant_id', $tenant->id)->update(['allow_media' => true]);
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $device = Device::query()->create(['tenant_id' => $tenant->id, 'name' => 'Media', 'status' => DeviceStatus::Connected, 'provider' => 'baileys']);
+        $key = app(CreateApiKey::class)->handle($tenant, ['name' => 'Media key']);
+        Http::fake(['whatsapp-service.test/*' => Http::response(['success' => true, 'data' => ['status' => 'sent', 'provider_message_id' => 'media-123']], 202)]);
+        $payload = ['device_id' => $device->ulid, 'to' => '+963944123456', 'type' => 'image', 'caption' => 'Receipt', 'file' => \Illuminate\Http\UploadedFile::fake()->image('receipt.png')];
+        $this->withTokenHeader($key['plain_text_key'])->post('/api/v1/messages/media', $payload, ['Accept' => 'application/json', 'Idempotency-Key' => 'receipt-123'])->assertStatus(202);
+        Http::assertSent(fn ($request) => $request['type'] === 'image'
+            && $request['media']['caption'] === 'Receipt'
+            && str_starts_with(base64_decode($request['media']['data']), "\x89PNG")
+            && ! isset($request['text']));
+        $this->post('/api/v1/messages/media', $payload, ['Accept' => 'application/json', 'Idempotency-Key' => 'receipt-123'])->assertStatus(202)->assertJsonPath('meta.idempotent_replay', true);
+        Http::assertSentCount(1);
+    }
+
+    public function test_media_honors_suppressed_recipients(): void
+    {
+        [, $tenant] = $this->createTenantUserWithSubscription();
+        Subscription::query()->where('tenant_id', $tenant->id)->update(['allow_media' => true]);
+        $device = Device::query()->create(['tenant_id' => $tenant->id, 'name' => 'Media', 'status' => DeviceStatus::Connected, 'provider' => 'baileys']);
+        $key = app(CreateApiKey::class)->handle($tenant, ['name' => 'Media key']);
+        \App\Domain\Consent\Models\SuppressionEntry::query()->create(['tenant_id' => $tenant->id, 'recipient_e164' => '+963944123456', 'reason' => 'opt_out']);
+        $this->withTokenHeader($key['plain_text_key'])->post('/api/v1/messages/media', [
+            'device_id' => $device->ulid, 'to' => '+963944123456', 'file' => \Illuminate\Http\UploadedFile::fake()->image('receipt.png'),
+        ], ['Accept' => 'application/json'])->assertForbidden();
+        Http::assertNothingSent();
+    }
+
+    public function test_dashboard_activity_excludes_other_tenants(): void
+    {
+        [, $tenant] = $this->createTenantUserWithSubscription();
+        [, $other] = $this->createTenantUserWithSubscription('+963911100001');
+        foreach ([$tenant, $other] as $owner) {
+            $device = Device::query()->create(['tenant_id' => $owner->id, 'name' => 'Activity', 'status' => DeviceStatus::Connected, 'provider' => 'baileys']);
+            \App\Domain\Messaging\Models\Message::query()->create(['tenant_id' => $owner->id, 'device_id' => $device->id, 'recipient_e164' => '+963944123456', 'type' => 'text', 'status' => 'sent']);
+        }
+        $days = app(\App\Domain\Messaging\Services\DashboardActivity::class)->forTenant($tenant);
+        $this->assertCount(7, $days);
+        $this->assertSame(1, array_sum(array_column($days, 'total')));
+    }
 }

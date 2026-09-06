@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Messaging\Actions;
 
 use App\Domain\ApiKeys\Models\ApiKey;
+use App\Domain\Consent\Services\MessageAdmissionService;
 use App\Domain\Devices\Enums\DeviceStatus;
 use App\Domain\Devices\Models\Device;
 use App\Domain\Messaging\Enums\MessageStatus;
@@ -31,6 +32,7 @@ final class AcceptMediaMessage
         private readonly EntitlementService $entitlements,
         private readonly PersistAcceptedMessage $persistAcceptedMessage,
         private readonly ResolveMessagingDevice $resolveMessagingDevice,
+        private readonly MessageAdmissionService $admission,
     ) {}
 
     /**
@@ -56,7 +58,7 @@ final class AcceptMediaMessage
         $this->entitlements->assertAllows($subscription, 'messages.send');
         $this->entitlements->assertAllows($subscription, 'messages.media');
 
-        $maxMb = (int) ($subscription?->max_media_size_mb ?? config('media.max_upload_mb', 16));
+        $maxMb = min(16, (int) config('media.max_upload_mb', 16), (int) $subscription->max_media_size_mb);
         $maxBytes = $maxMb * 1024 * 1024;
         if ($file->getSize() !== false && $file->getSize() > $maxBytes) {
             throw new HttpResponseException(
@@ -73,6 +75,7 @@ final class AcceptMediaMessage
         }
 
         $device = $this->resolveMessagingDevice->resolve($tenant, $data, $apiKey);
+        $admission = $this->admission->assertAllowed($tenant, $data['to'], (string) ($data['category'] ?? 'transactional'));
 
         $idempotencyKey = $data['idempotency_key'] ?? null;
 
@@ -88,7 +91,12 @@ final class AcceptMediaMessage
         }
 
         $type = MessageType::tryFrom($data['type'] ?? 'image') ?? MessageType::Image;
-        $extension = $file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'bin';
+        if ($type !== MessageType::Document && ! str_starts_with($mime, $type->value.'/')) {
+            throw new HttpResponseException(
+                ApiResponse::error('MEDIA_TYPE_INVALID', 'The file MIME type does not match the requested media type.', 422)
+            );
+        }
+        $extension = $file->guessExtension() ?: 'bin';
         $path = sprintf(
             'tenants/%s/media/%s.%s',
             $tenant->ulid,
@@ -148,6 +156,7 @@ final class AcceptMediaMessage
 
                     return $message;
                 },
+                $admission['available_at'],
             );
         } catch (QueryException $e) {
             if (is_string($idempotencyKey) && $idempotencyKey !== '') {
