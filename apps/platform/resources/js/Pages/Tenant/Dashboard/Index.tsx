@@ -1,242 +1,74 @@
-import { usePage } from '@inertiajs/react';
-import {
-    ArrowUpRight,
-    CreditCard,
-    KeyRound,
-    MessageSquare,
-    Package,
-    Smartphone,
-    Webhook,
-} from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowUpRight, CreditCard, KeyRound, MessageSquare, Smartphone, Webhook } from 'lucide-react';
+import { DashboardActivity, type ActivityDay } from '@/Components/patterns/DashboardActivity';
 import { TenantPanel } from '@/Components/patterns/tenant/TenantPanel';
-import { TenantQuickAction } from '@/Components/patterns/tenant/TenantQuickAction';
 import { TenantStatCard } from '@/Components/patterns/tenant/TenantStatCard';
 import { TenantUsageBar } from '@/Components/patterns/tenant/TenantUsageBar';
 import { Badge } from '@/Components/ui/Badge';
-import { LinkButton } from '@/Components/ui/LinkButton';
 import TenantShell from '@/Layouts/TenantShell';
 import type { SharedAuth } from '@/Lib/auth';
-
-type Subscription = {
-    id: string;
-    status: string;
-    is_usable: boolean;
-    plan_name: string;
-    plan_slug: string;
-    starts_at: string | null;
-    ends_at: string | null;
-    max_devices: number;
-    monthly_message_limit: number;
-} | null;
-
-type Stats = {
-    devices: number;
-    api_keys: number;
-    webhooks: number;
-    messages_used: number;
-};
+import { useI18n } from '@/i18n/useI18n';
 
 type Props = {
-    subscription: Subscription;
-    stats: Stats;
+    subscription: { is_usable: boolean; status: string; plan_name: string; ends_at: string | null; max_devices: number; monthly_message_limit: number } | null;
+    stats: { devices: number; api_keys: number; webhooks: number; messages_used: number };
+    activity?: ActivityDay[];
 };
 
-function formatDate(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat('ar', { dateStyle: 'medium' }).format(new Date(value));
-}
-
-function statusLabel(status: string): string {
-    const labels: Record<string, string> = {
-        active: 'نشط',
-        expired: 'منتهٍ',
-        suspended: 'موقوف',
-        grace: 'فترة سماح',
-    };
-
-    return labels[status] ?? status;
-}
-
-export default function TenantDashboardIndex({ subscription, stats }: Props) {
-    const user = usePage<{ auth?: SharedAuth }>().props.auth?.user ?? null;
-    const displayName = user?.full_name ?? user?.phone_e164 ?? 'عميل مراسيل';
-    const maxDevices = subscription?.max_devices ?? 0;
-
+export default function TenantDashboardIndex({ subscription, stats, activity = [] }: Props) {
+    const { locale } = useI18n();
+    const ar = locale === 'ar';
+    const user = usePage<{ auth?: SharedAuth }>().props.auth?.user;
+    const name = user?.full_name ?? user?.phone_e164 ?? (ar ? 'حسابك' : 'your workspace');
+    const number = new Intl.NumberFormat(locale);
+    const end = subscription?.ends_at
+        ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(subscription.ends_at)) : '—';
+    const actions = [
+        { href: '/devices', title: ar ? 'إدارة الأجهزة' : 'Manage devices', description: ar ? 'اربط رقم واتساب وتابع حالة الاتصال.' : 'Connect a WhatsApp number and monitor its status.', icon: Smartphone },
+        { href: '/api-keys', title: ar ? 'مفاتيح الربط' : 'API keys', description: ar ? 'جهّز تكامل مشروعك وأدر صلاحياته.' : 'Set up your integration and manage access.', icon: KeyRound },
+        { href: '/messages', title: ar ? 'سجل الرسائل' : 'Message history', description: ar ? 'تابع رسائلك وحالات التسليم.' : 'Review messages and delivery status.', icon: MessageSquare },
+    ];
     return (
-        <TenantShell
-            title="لوحة التحكم"
-            description="نظرة عامة على اشتراكك وموارد حسابك على مراسيل."
-            hidePageHead
-        >
-            <section className="tenant-hero" aria-label="ترحيب">
-                <div className="tenant-hero__inner">
-                    <div className="min-w-0">
-                        <p className="tenant-hero__eyebrow">مرحباً بك</p>
-                        <h2 className="tenant-hero__title">{displayName}</h2>
-                        <p className="tenant-hero__subtitle">
-                            {subscription?.is_usable
-                                ? 'إدارة أجهزة واتساب، مفاتيح API، وWebhooks من مكان واحد.'
-                                : 'فعّل اشتراكك للبدء بربط الأجهزة وإرسال الرسائل عبر API.'}
-                        </p>
-                    </div>
-                    <div className="tenant-hero__meta">
-                        {subscription ? (
-                            <>
-                                <span className="tenant-hero__pill">
-                                    <Package className="size-3.5" aria-hidden />
-                                    {subscription.plan_name}
-                                </span>
-                                {subscription.ends_at ? (
-                                    <span className="tenant-hero__pill">
-                                        ينتهي {formatDate(subscription.ends_at)}
-                                    </span>
-                                ) : null}
-                            </>
-                        ) : (
-                            <LinkButton href="/plans" variant="accent" size="sm">
-                                اختيار خطة
-                            </LinkButton>
-                        )}
-                    </div>
+        <TenantShell title={ar ? 'لوحة التحكم' : 'Dashboard'} hidePageHead>
+            <Head title={ar ? 'لوحة التحكم' : 'Dashboard'} />
+            <section className="dashboard-hero">
+                <div className="min-w-0">
+                    <p className="dashboard-hero__eyebrow">{ar ? 'مراسـيل / مساحة العمل' : 'MARASIL / WORKSPACE'}</p>
+                    <h1>{ar ? 'أهلًا، ' : 'Welcome, '}{name}</h1>
+                    <p className="dashboard-hero__description">{ar ? 'كل ما تحتاجه لإدارة تواصلك مع عملائك، في مساحة واحدة.' : 'Everything you need to manage customer messaging, in one workspace.'}</p>
                 </div>
+                <Link href="/devices" className="dashboard-hero__link"><Smartphone className="size-4" aria-hidden />{ar ? 'إدارة الأجهزة' : 'Manage devices'}</Link>
             </section>
-
-            <section aria-labelledby="tenant-stats-heading" className="tenant-stat-grid mt-6">
-                <h2 id="tenant-stats-heading" className="sr-only">
-                    مؤشرات سريعة
-                </h2>
-                <TenantStatCard
-                    title="الأجهزة"
-                    value={stats.devices}
-                    icon={Smartphone}
-                    tone="brand"
-                    usage={
-                        maxDevices > 0
-                            ? { current: stats.devices, max: maxDevices, label: 'استخدام الأجهزة' }
-                            : undefined
-                    }
-                    hint={maxDevices <= 0 ? '—' : undefined}
-                />
-                <TenantStatCard
-                    title="مفاتيح API"
-                    value={stats.api_keys}
-                    hint="مفاتيح نشطة"
-                    icon={KeyRound}
-                    tone="accent"
-                />
-                <TenantStatCard
-                    title="Webhooks"
-                    value={stats.webhooks}
-                    hint="نقاط استقبال الأحداث"
-                    icon={Webhook}
-                    tone="neutral"
-                />
+            <section className="dashboard-stat-grid" aria-label={ar ? 'مؤشرات الحساب' : 'Workspace metrics'}>
+                <TenantStatCard title={ar ? 'الرسائل هذا الشهر' : 'Messages this month'} value={number.format(stats.messages_used)} hint={ar ? 'من رصيد اشتراكك الحالي' : 'Against your current allowance'} icon={MessageSquare} />
+                <TenantStatCard title={ar ? 'الأجهزة' : 'Devices'} value={number.format(stats.devices)} hint={ar ? 'أجهزة مساحة العمل' : 'Workspace devices'} icon={Smartphone} />
+                <TenantStatCard title={ar ? 'مفاتيح API' : 'API keys'} value={number.format(stats.api_keys)} hint={ar ? 'مفاتيح غير ملغاة' : 'Non-revoked keys'} icon={KeyRound} tone="accent" />
+                <TenantStatCard title="Webhooks" value={number.format(stats.webhooks)} hint={ar ? 'نقاط استقبال الأحداث' : 'Event endpoints'} icon={Webhook} tone="neutral" />
             </section>
-
-            <div className="tenant-dashboard-grid mt-6">
-                <TenantPanel
-                    title="اختصارات سريعة"
-                    description="انتقل مباشرة إلى الأقسام الأكثر استخداماً."
-                >
-                    <div className="tenant-quick-grid tenant-quick-grid--4">
-                        <TenantQuickAction
-                            href="/devices"
-                            title="الأجهزة"
-                            description="ربط QR وإدارة الجلسات"
-                            icon={Smartphone}
-                        />
-                        <TenantQuickAction
-                            href="/api-keys"
-                            title="مفاتيح API"
-                            description="إنشاء وإدارة المفاتيح"
-                            icon={KeyRound}
-                            accent
-                        />
-                        <TenantQuickAction
-                            href="/webhooks"
-                            title="Webhooks"
-                            description="استقبال أحداث الرسائل"
-                            icon={Webhook}
-                        />
-                        <TenantQuickAction
-                            href="/plans"
-                            title="الخطط"
-                            description="ترقية أو تغيير الاشتراك"
-                            icon={Package}
-                            accent
-                        />
-                    </div>
-                </TenantPanel>
-
-                <TenantPanel
-                    title="الاشتراك"
-                    description="حالة خطتك الحالية وحدود الاستخدام."
-                    action={
-                        <LinkButton href="/subscription" variant="ghost" size="sm">
-                            <ArrowUpRight className="size-4" aria-hidden />
-                            التفاصيل
-                        </LinkButton>
-                    }
-                >
-                    {subscription ? (
-                        <div className="space-y-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-base font-extrabold text-[rgb(var(--brand-950))]">
-                                    {subscription.plan_name}
-                                </p>
-                                <Badge tone={subscription.is_usable ? 'success' : 'warning'}>
-                                    {statusLabel(subscription.status)}
-                                </Badge>
-                            </div>
-                            <dl className="tenant-detail-grid">
-                                <div className="tenant-detail-item">
-                                    <dt>تاريخ الانتهاء</dt>
-                                    <dd>{formatDate(subscription.ends_at)}</dd>
-                                </div>
-                                <div className="tenant-detail-item">
-                                    <dt>الرسائل / شهر</dt>
-                                    <dd>{subscription.monthly_message_limit.toLocaleString('ar')}</dd>
-                                </div>
-                                <div className="tenant-detail-item">
-                                    <dt>الأجهزة المسموحة</dt>
-                                    <dd>{subscription.max_devices}</dd>
-                                </div>
-                            </dl>
-                            {maxDevices > 0 ? (
-                                <TenantUsageBar
-                                    current={stats.devices}
-                                    max={maxDevices}
-                                    label="الأجهزة المستخدمة"
-                                />
-                            ) : null}
-                            {subscription.monthly_message_limit > 0 ? (
-                                <TenantUsageBar
-                                    current={stats.messages_used}
-                                    max={subscription.monthly_message_limit}
-                                    label="الرسائل هذا الشهر"
-                                />
-                            ) : null}
-                            <LinkButton href="/subscription" variant="secondary" size="sm" className="w-full sm:w-auto">
-                                <CreditCard className="size-4" aria-hidden />
-                                إدارة الاشتراك
-                            </LinkButton>
+            <div className="dashboard-columns">
+                <DashboardActivity days={activity} locale={locale} />
+                <TenantPanel title={ar ? 'اشتراكك الحالي' : 'Your subscription'} description={ar ? 'تابع رصيدك وموعد تجديدك.' : 'Track your allowance and renewal date.'}>
+                    {subscription ? <div className="space-y-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <strong className="text-lg">{subscription.plan_name}</strong>
+                            <Badge tone={subscription.is_usable ? 'success' : 'warning'}>{subscription.is_usable ? (ar ? 'متاح للاستخدام' : 'Available') : (ar ? 'غير فعّال' : 'Inactive')}</Badge>
                         </div>
-                    ) : (
-                        <div className="space-y-3 text-center sm:text-start">
-                            <MessageSquare className="mx-auto size-8 text-[rgb(var(--muted))] sm:mx-0" aria-hidden />
-                            <p className="text-body-sm text-[rgb(var(--muted))]">
-                                لا يوجد اشتراك فعّال. اختر خطة للبدء.
-                            </p>
-                            <LinkButton href="/plans" className="w-full sm:w-auto">
-                                اختيار خطة
-                            </LinkButton>
-                        </div>
-                    )}
+                        <div className="flex flex-wrap justify-between gap-2 text-sm"><span className="text-[rgb(var(--muted))]">{ar ? 'تاريخ الانتهاء' : 'Expires on'}</span><span>{end}</span></div>
+                        {subscription.monthly_message_limit > 0 ? <TenantUsageBar current={stats.messages_used} max={subscription.monthly_message_limit} locale={locale} label={ar ? 'رصيد الرسائل' : 'Message allowance'} /> : <p className="text-sm">{subscription.monthly_message_limit < 0 ? (ar ? 'رسائل غير محدودة' : 'Unlimited messages') : (ar ? 'لا يوجد رصيد رسائل' : 'No message allowance')}</p>}
+                        {subscription.max_devices > 0 ? <TenantUsageBar current={stats.devices} max={subscription.max_devices} locale={locale} label={ar ? 'الأجهزة' : 'Devices'} /> : null}
+                        <Link href="/subscription" className="dashboard-action"><CreditCard className="size-4" aria-hidden /><strong>{ar ? 'إدارة الاشتراك' : 'Manage subscription'}</strong><ArrowUpRight className="ms-auto size-4 rtl:-scale-x-100" aria-hidden /></Link>
+                    </div> : <Link href="/plans" className="dashboard-action">{ar ? 'اختر خطة وابدأ بإرسال رسائلك' : 'Choose a plan to start messaging'}</Link>}
                 </TenantPanel>
             </div>
+            <TenantPanel title={ar ? 'خطوتك التالية' : 'Your next step'} description={ar ? 'وصول سريع إلى أدوات العمل اليومية.' : 'Quick access to your everyday tools.'}>
+                <div className="grid gap-3 lg:grid-cols-3">
+                    {actions.map(({ href, title, description, icon: Icon }) => <Link key={href} href={href} className="dashboard-action">
+                        <span className="dashboard-action__icon"><Icon className="size-5" aria-hidden /></span>
+                        <div className="min-w-0"><strong>{title}</strong><p>{description}</p></div>
+                        <ArrowUpRight className="ms-auto size-4 shrink-0 rtl:-scale-x-100" aria-hidden />
+                    </Link>)}
+                </div>
+            </TenantPanel>
         </TenantShell>
     );
 }

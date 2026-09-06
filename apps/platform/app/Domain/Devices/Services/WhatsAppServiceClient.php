@@ -99,7 +99,7 @@ final class WhatsAppServiceClient
             $response = match (strtoupper($method)) {
                 'GET' => $pending->get($url),
                 'POST' => $pending->withBody($body, 'application/json')->post($url),
-                'DELETE' => $pending->delete($url),
+                'DELETE' => $pending->withBody($body, 'application/json')->delete($url),
                 default => throw new RuntimeException('Unsupported HTTP method: '.$method),
             };
 

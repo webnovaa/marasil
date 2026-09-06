@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Menu, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Button } from '@/Components/ui/Button';
 import { Separator } from '@/Components/ui/Separator';
@@ -105,7 +106,6 @@ export function SidebarProvider({
                 <div
                     style={
                         {
-                            '--sidebar-width': 'var(--sidebar-width)',
                             '--sidebar-width-icon': 'var(--sidebar-collapsed)',
                             ...style,
                         } as React.CSSProperties
@@ -153,34 +153,26 @@ export function Sidebar({
 
     if (isMobile) {
         return (
-            <>
-                <button
-                    type="button"
-                    aria-label="إغلاق القائمة"
-                    tabIndex={openMobile ? 0 : -1}
-                    className={cn(
-                        'fixed inset-0 z-[var(--z-overlay)] border-0 bg-[rgb(var(--brand-950)/0.35)] p-0 transition-opacity duration-[var(--motion-panel)]',
-                        openMobile ? 'opacity-100' : 'pointer-events-none opacity-0',
-                    )}
-                    onClick={() => setOpenMobile(false)}
-                />
-                <aside
+            <DialogPrimitive.Root open={openMobile} onOpenChange={setOpenMobile}>
+                <DialogPrimitive.Portal>
+                    <DialogPrimitive.Overlay className="fixed inset-0 z-[var(--z-overlay)] bg-[rgb(var(--brand-950)/0.35)]" />
+                    <DialogPrimitive.Content asChild aria-describedby={undefined}>
+                    <aside
                     data-mobile="true"
+                    dir={document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr'}
                     className={cn(
-                        'fixed inset-y-0 z-[var(--z-modal)] flex w-[min(var(--sidebar-width),92vw)] flex-col border border-[rgb(var(--sidebar-border))] bg-[rgb(var(--sidebar-background))] text-[rgb(var(--sidebar-foreground))] shadow-[var(--shadow-md)] transition-transform duration-[var(--motion-panel)] ease-[var(--ease-standard)]',
-                        side === 'right' ? 'inset-inline-end-0' : 'inset-inline-start-0',
-                        openMobile
-                            ? 'translate-x-0'
-                            : side === 'right'
-                              ? 'ltr:translate-x-full rtl:-translate-x-full'
-                              : 'ltr:-translate-x-full rtl:translate-x-full',
+                        'fixed inset-y-0 z-[var(--z-modal)] flex w-[min(var(--sidebar-width),92vw)] flex-col border border-[rgb(var(--sidebar-border))] bg-[rgb(var(--sidebar-background))] text-[rgb(var(--sidebar-foreground))] shadow-[var(--shadow-md)]',
+                        side === 'right' ? 'start-0' : 'end-0',
                         className,
                     )}
                     {...props}
                 >
+                    <DialogPrimitive.Title className="sr-only">{document.documentElement.lang === 'ar' ? 'القائمة الرئيسية' : 'Main navigation'}</DialogPrimitive.Title>
                     {children}
                 </aside>
-            </>
+                    </DialogPrimitive.Content>
+                </DialogPrimitive.Portal>
+            </DialogPrimitive.Root>
         );
     }
 

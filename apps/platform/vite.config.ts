@@ -28,7 +28,9 @@ export default defineConfig({
             host: 'localhost',
         },
         watch: {
-            ignored: ['**/storage/framework/views/**'],
+            usePolling: process.env.VITE_USE_POLLING === 'true',
+            interval: 500,
+            ignored: ['**/storage/**', '**/bootstrap/cache/**', '**/test-results/**', '**/playwright-report/**'],
         },
     },
 });

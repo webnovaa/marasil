@@ -25,16 +25,25 @@ services:
     volumes:
       - platform_vendor:/var/www/html/vendor
 
+  # Windows Docker: Vite HMR often hangs serving Tailwind CSS over the bind mount,
+  # which leaves the browser on a blank page via public/hot → :5173.
+  # Use build --watch instead (no hot file; assets served by nginx from public/build).
   vite:
+    environment:
+      VITE_USE_POLLING: "true"
     volumes:
       - platform_node_modules:/var/www/html/node_modules
+      - platform_vendor:/var/www/html/vendor
+    ports: !reset []
     command: >
       sh -c "
         if [ ! -f node_modules/.install-done ]; then
           echo 'Installing npm dependencies into Docker volume...';
           npm install && touch node_modules/.install-done;
         fi &&
-        npm run dev -- --host 0.0.0.0 --port 5173
+        rm -f public/hot &&
+        npm run build &&
+        npx vite build --watch
       "
 
   whatsapp-service:

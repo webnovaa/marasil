@@ -5,7 +5,7 @@
 - PostgreSQL، timestamps UTC (`timestamptz`).
 - مفتاح داخلي `bigint` + `ulid char(26)` عام فريد.
 - Soft deletes للبيانات التجارية حيث يناسب (`users`, `tenants`, `plans`, `devices`, `webhook_endpoints`).
-- `tenant_id` على كل جداول العميل؛ عزل عبر Global Scope + Policies.
+- `tenant_id` على جداول العميل؛ العزل عبر فلترة الاستعلامات الصريحة وPolicies، وليس Global Scope عام.
 - Foreign keys + indexes + check constraints + partial unique indexes.
 - لا تخزين API key خام أو OTP خام أو session credentials غير مشفّرة.
 
@@ -85,7 +85,7 @@ erDiagram
 
 | جدول | ملاحظات |
 |------|---------|
-| `api_keys` | unique `prefix`; `secret_hash` فقط |
+| `api_keys` | `secret_hash` للمصادقة و`secret_encrypted` لإعادة عرض مفتاح تكامل الجهاز للمستخدم المصرّح |
 | `messages` | unique `(tenant_id,idempotency_key)` حيث لا null؛ indexes الحالة/الجهاز/الزمن |
 | `message_attempts` | تاريخ المحاولات |
 | `message_status_events` | timeline الحالة |

@@ -19,7 +19,7 @@ final class StoreMediaMessageRequest extends FormRequest
      */
     public function rules(): array
     {
-        $maxMb = (int) config('media.max_upload_mb', 16);
+        $maxMb = min(16, (int) config('media.max_upload_mb', 16));
         $maxKb = $maxMb * 1024;
         $mimes = implode(',', config('media.allowed_mimes', [
             'jpeg', 'jpg', 'png', 'gif', 'webp', 'pdf', 'mp4', 'mp3', 'ogg',
@@ -30,6 +30,7 @@ final class StoreMediaMessageRequest extends FormRequest
             'to' => ['required', 'string', 'max:20', 'regex:/^\+[1-9]\d{6,14}$/'],
             'type' => ['sometimes', Rule::in(['image', 'document', 'audio', 'video'])],
             'caption' => ['sometimes', 'nullable', 'string', 'max:1024'],
+            'category' => ['sometimes', 'in:otp,transactional,marketing'],
             'file' => ['required', 'file', 'max:'.$maxKb, 'mimes:'.$mimes],
         ];
     }

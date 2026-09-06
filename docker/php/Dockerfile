@@ -16,6 +16,8 @@ RUN apk add --no-cache \
 COPY --from=composer:2.8.11 /usr/bin/composer /usr/bin/composer
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-www.conf
+COPY docker/php/entrypoint.sh /usr/local/bin/laravel-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/laravel-entrypoint.sh
 
 WORKDIR /var/www/html
 
