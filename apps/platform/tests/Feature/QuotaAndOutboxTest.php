@@ -70,10 +70,10 @@ final class QuotaAndOutboxTest extends TestCase
         $created = app(CreateApiKey::class)->handle($tenant, [
             'name' => 'Sender',
             'environment' => 'live',
-        ]);
+            'device_id' => $device->id,
+        ], deviceBound: true);
 
         $payload = [
-            'device_id' => $device->ulid,
             'to' => '+963944123456',
             'message' => 'مرحبا',
         ];
@@ -93,7 +93,6 @@ final class QuotaAndOutboxTest extends TestCase
 
         $this->withHeader('Authorization', 'Bearer '.$created['plain_text_key'])
             ->postJson('/api/v1/messages/text', [
-                'device_id' => $device->ulid,
                 'to' => '+963944123457',
                 'message' => 'ثانية',
             ])
@@ -120,11 +119,11 @@ final class QuotaAndOutboxTest extends TestCase
             'name' => 'Read only',
             'environment' => 'live',
             'abilities' => ['messages:read'],
-        ]);
+            'device_id' => $device->id,
+        ], deviceBound: true);
 
         $this->withHeader('Authorization', 'Bearer '.$created['plain_text_key'])
             ->postJson('/api/v1/messages/text', [
-                'device_id' => $device->ulid,
                 'to' => '+963944123456',
                 'message' => 'لا',
             ])
@@ -152,11 +151,12 @@ final class QuotaAndOutboxTest extends TestCase
         $created = app(CreateApiKey::class)->handle($tenant, [
             'name' => 'Sender',
             'environment' => 'live',
-        ]);
+            'device_id' => $device->id,
+        ], deviceBound: true);
 
         $this->withHeader('Authorization', 'Bearer '.$created['plain_text_key'])
             ->postJson('/api/v1/messages/text', [
-                'device_id' => $device->ulid,
+                'to' => '+963944123456',
                 'to' => '+963944123456',
                 'message' => 'لا',
             ])

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Webhooks\Jobs;
 
+use App\Domain\Notifications\Services\TenantOwnerAlertService;
+use App\Domain\Tenancy\Models\Tenant;
 use App\Domain\Webhooks\Enums\WebhookDeliveryStatus;
 use App\Domain\Webhooks\Enums\WebhookEndpointStatus;
 use App\Domain\Webhooks\Models\WebhookDelivery;
+use App\Domain\Webhooks\Models\WebhookEndpoint;
 use App\Domain\Webhooks\Services\WebhookSigner;
 use App\Domain\Webhooks\Services\WebhookUrlValidator;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,10 +29,13 @@ final class DeliverWebhook implements ShouldQueue
         public readonly string $deliveryUlid,
     ) {}
 
-    public function handle(WebhookSigner $signer, WebhookUrlValidator $urlValidator): void
-    {
+    public function handle(
+        WebhookSigner $signer,
+        WebhookUrlValidator $urlValidator,
+        TenantOwnerAlertService $ownerAlerts,
+    ): void {
         $delivery = WebhookDelivery::query()
-            ->with('endpoint')
+            ->with('endpoint.tenant.owner')
             ->where('ulid', $this->deliveryUlid)
             ->first();
 
@@ -60,6 +66,7 @@ final class DeliverWebhook implements ShouldQueue
                 'last_failure_at' => now(),
                 'failure_count' => $endpoint->failure_count + 1,
             ]);
+            $this->alertOwner($endpoint, $delivery, $ownerAlerts, 'عنوان Webhook غير صالح.');
 
             return;
         }
@@ -102,23 +109,24 @@ final class DeliverWebhook implements ShouldQueue
                 return;
             }
 
-            $this->scheduleRetry($delivery, $endpoint, $response->status(), $excerpt, $durationMs);
+            $this->scheduleRetry($delivery, $endpoint, $response->status(), $excerpt, $durationMs, $ownerAlerts);
         } catch (Throwable $e) {
             $durationMs = (int) ((hrtime(true) - $started) / 1_000_000);
             Log::warning('Webhook delivery HTTP error', [
                 'delivery' => $this->deliveryUlid,
                 'error' => $e->getMessage(),
             ]);
-            $this->scheduleRetry($delivery, $endpoint, null, 'HTTP error', $durationMs);
+            $this->scheduleRetry($delivery, $endpoint, null, 'HTTP error', $durationMs, $ownerAlerts);
         }
     }
 
     private function scheduleRetry(
         WebhookDelivery $delivery,
-        \App\Domain\Webhooks\Models\WebhookEndpoint $endpoint,
+        WebhookEndpoint $endpoint,
         ?int $responseStatus,
         string $excerpt,
         int $durationMs,
+        TenantOwnerAlertService $ownerAlerts,
     ): void {
         $attempt = $delivery->attempt_count + 1;
         /** @var list<int> $delays */
@@ -143,6 +151,12 @@ final class DeliverWebhook implements ShouldQueue
                 'status' => WebhookDeliveryStatus::Abandoned,
                 'next_attempt_at' => null,
             ]));
+            $this->alertOwner(
+                $endpoint,
+                $delivery,
+                $ownerAlerts,
+                'توقف إشعار Webhook بعد عدة محاولات فاشلة.',
+            );
 
             return;
         }
@@ -156,5 +170,37 @@ final class DeliverWebhook implements ShouldQueue
         ]));
 
         self::dispatch($delivery->ulid)->delay($nextAt);
+    }
+
+    private function alertOwner(
+        WebhookEndpoint $endpoint,
+        WebhookDelivery $delivery,
+        TenantOwnerAlertService $ownerAlerts,
+        string $reason,
+    ): void {
+        $tenant = $endpoint->relationLoaded('tenant')
+            ? $endpoint->tenant
+            : Tenant::query()->with('owner')->find($endpoint->tenant_id);
+
+        if ($tenant === null) {
+            return;
+        }
+
+        $ownerAlerts->alert(
+            tenant: $tenant,
+            type: 'webhook.abandoned',
+            title: 'فشل توصيل Webhook',
+            body: sprintf(
+                '%s الحدث: %s. راجع صفحة Webhooks وأصلح الرابط أو السر.',
+                $reason,
+                (string) $delivery->event_type,
+            ),
+            data: [
+                'endpoint_id' => $endpoint->ulid,
+                'delivery_id' => $delivery->ulid,
+                'event_type' => $delivery->event_type,
+            ],
+            dedupeKey: 'webhook-abandoned:'.$endpoint->ulid.':'.$delivery->ulid,
+        );
     }
 }

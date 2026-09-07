@@ -32,11 +32,11 @@ export function TenantHeader({ title }: TenantHeaderProps) {
     }, []);
 
     return (
-        <header className="sticky top-0 z-[var(--z-sticky)] shrink-0 border-b border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
-            <div className="flex h-[var(--tenant-header-height,var(--admin-header-height))] items-center gap-2 px-3 sm:px-4 md:px-6">
+        <header className="admin-app-header sticky top-0 z-[var(--z-sticky)] shrink-0 border-b">
+            <div className="flex h-[var(--tenant-header-height,var(--admin-header-height))] items-center gap-3 px-4 sm:px-5 md:px-6">
                 <SidebarTrigger className="shrink-0" />
                 {title ? (
-                    <p className="min-w-0 truncate text-sm font-semibold text-[rgb(var(--brand-950))] sm:hidden">
+                    <p className="min-w-0 truncate text-sm font-semibold tracking-tight text-[rgb(var(--brand-950))] sm:hidden">
                         {title}
                     </p>
                 ) : null}
@@ -54,7 +54,7 @@ export function TenantHeader({ title }: TenantHeaderProps) {
                     ) : null}
                     <Link
                         href="/notifications"
-                        className="relative inline-flex size-9 items-center justify-center rounded-[var(--radius-md)] text-[rgb(var(--brand-800))] hover:bg-[rgb(var(--brand-50))]"
+                        className="relative inline-flex size-10 items-center justify-center rounded-[var(--radius-full)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface))] text-[rgb(var(--brand-800))] hover:bg-[rgb(var(--surface-soft))]"
                         aria-label="الإشعارات"
                     >
                         <Bell className="size-4" aria-hidden />
@@ -66,7 +66,7 @@ export function TenantHeader({ title }: TenantHeaderProps) {
                     </Link>
                     <Link href="/profile" className="tenant-header-chip">
                         <span className="tenant-header-chip__avatar">{initials}</span>
-                        <span className="tenant-header-chip__name">{user?.full_name ?? 'عميل مراسيل'}</span>
+                        <span className="tenant-header-chip__name">{user?.full_name ?? 'مستخدم مراسيل'}</span>
                     </Link>
                 </div>
             </div>

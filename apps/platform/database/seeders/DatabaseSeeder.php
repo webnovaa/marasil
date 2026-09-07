@@ -10,13 +10,27 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Always safe for production / staging / local.
         $this->call([
             RolesAndPermissionsSeeder::class,
-            SuperAdminSeeder::class,
             PlatformSystemSeeder::class,
             PlansSeeder::class,
-            DemoDataSeeder::class,
-            DevelopmentAccountsSeeder::class,
+        ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            // Dev-only accounts + sample tenant data (hardcoded, never for production).
+            $this->call([
+                SuperAdminSeeder::class,
+                DemoDataSeeder::class,
+                DevelopmentAccountsSeeder::class,
+            ]);
+
+            return;
+        }
+
+        // Production/staging: first admin from env (optional but recommended).
+        $this->call([
+            ProductionBootstrapSeeder::class,
         ]);
     }
 }

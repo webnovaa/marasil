@@ -13,6 +13,9 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Local/testing super admin only. Production uses ProductionBootstrapSeeder + env.
+ */
 class SuperAdminSeeder extends Seeder
 {
     public const PHONE = '+963980212933';
@@ -22,7 +25,7 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         if (! app()->environment(['local', 'testing'])) {
-            $this->command?->warn('Skipping development SuperAdminSeeder outside local/testing.');
+            $this->command?->warn('Skipping SuperAdminSeeder outside local/testing.');
 
             return;
         }
@@ -45,7 +48,7 @@ class SuperAdminSeeder extends Seeder
                 [
                     'full_name' => 'Super Admin',
                     'company_name' => 'Platform',
-                    'metadata' => [],
+                    'metadata' => ['seeded' => 'local'],
                 ],
             );
 

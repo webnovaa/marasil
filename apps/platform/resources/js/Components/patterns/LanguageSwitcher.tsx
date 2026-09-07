@@ -12,17 +12,25 @@ export function LanguageSwitcher() {
     }
 
     return (
-        <div className="inline-flex overflow-hidden rounded-[var(--radius-md)] border border-[rgb(var(--border))]">
+        <div className="inline-flex rounded-[var(--radius-full)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-0.5">
             <button
                 type="button"
-                className={`px-2 py-1 text-caption ${locale === 'ar' ? 'bg-[rgb(var(--brand-100))] font-semibold text-[rgb(var(--brand-900))]' : 'text-[rgb(var(--muted))]'}`}
+                className={`min-w-8 rounded-[var(--radius-full)] px-2.5 py-1 text-caption transition-colors ${
+                    locale === 'ar'
+                        ? 'bg-[rgb(var(--surface))] font-semibold text-[rgb(var(--brand-900))] shadow-[var(--shadow-xs)]'
+                        : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text-primary))]'
+                }`}
                 onClick={() => switchTo('ar')}
             >
                 ع
             </button>
             <button
                 type="button"
-                className={`px-2 py-1 text-caption ${locale === 'en' ? 'bg-[rgb(var(--brand-100))] font-semibold text-[rgb(var(--brand-900))]' : 'text-[rgb(var(--muted))]'}`}
+                className={`min-w-8 rounded-[var(--radius-full)] px-2.5 py-1 text-caption transition-colors ${
+                    locale === 'en'
+                        ? 'bg-[rgb(var(--surface))] font-semibold text-[rgb(var(--brand-900))] shadow-[var(--shadow-xs)]'
+                        : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text-primary))]'
+                }`}
                 onClick={() => switchTo('en')}
             >
                 EN

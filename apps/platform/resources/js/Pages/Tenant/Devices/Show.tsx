@@ -352,10 +352,15 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
             description="اربط جهازك بواتساب لمزامنة الجلسة والبدء بالإرسال عبر المنصة."
             width="narrow"
             headerActions={
-                <Link href="/devices" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgb(var(--muted))] hover:text-[rgb(var(--brand-700))] transition-colors">
-                    <ArrowRight className="size-4" />
-                    عودة للأجهزة
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Link href="/docs" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgb(var(--brand-800))] hover:underline">
+                        دليل المطوّر
+                    </Link>
+                    <Link href="/devices" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgb(var(--muted))] hover:text-[rgb(var(--brand-700))] transition-colors">
+                        <ArrowRight className="size-4" />
+                        عودة للأجهزة
+                    </Link>
+                </div>
             }
         >
             <div className="space-y-6">
@@ -477,13 +482,13 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
 
                 <div>
                     <TenantPanel
-                        title="ربط المنصات الخارجية"
-                        description="أعطِ شريكك هذه البيانات مرة واحدة — كل جهاز له API Key خاص به."
+                        title="ربط مشروعك البرمجي"
+                        description="مفتاح خاص بهذا الجهاز. يظهر مرة واحدة فقط عند الإنشاء أو التجديد — احفظه في خادم مشروعك فوراً."
                     >
                         {integration ? (
                             <div className="space-y-4">
                                 <div className="grid gap-3 sm:grid-cols-2">
-                                    <FormField id="integration-username" label="اسم المستخدم (Username)">
+                                    <FormField id="integration-username" label="معرّف المستأجر (Tenant)">
                                         <div className="flex gap-2">
                                             <Input id="integration-username" dir="ltr" readOnly value={integration.username} />
                                             <Button type="button" variant="secondary" size="sm" onClick={() => void copyText(integration.username)}>
@@ -491,28 +496,37 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
                                             </Button>
                                         </div>
                                     </FormField>
-                                    <FormField id="integration-device-name" label="اسم الجهاز">
-                                        <Input id="integration-device-name" readOnly value={integration.device_name} />
+                                    <FormField id="integration-device-id" label="معرّف الجهاز (اختياري مع هذا المفتاح)">
+                                        <div className="flex gap-2">
+                                            <Input id="integration-device-id" dir="ltr" readOnly value={integration.device_id} />
+                                            <Button type="button" variant="secondary" size="sm" onClick={() => void copyText(integration.device_id)}>
+                                                <Copy className="size-4" />
+                                            </Button>
+                                        </div>
                                     </FormField>
                                 </div>
 
-                                {!integration.api_key && integration.has_api_key ? (
-                                    <Alert tone="warning" title="المفتاح غير مخزّن للعرض">
-                                        اضغط «تجديد API Key» مرة واحدة — بعدها يبقى ظاهراً دائماً.
+                                {integration.api_key ? (
+                                    <Alert tone="warning" title="انسخ المفتاح الآن">
+                                        لن نعرضه مرة أخرى بعد مغادرة الصفحة. خزّنه في متغيرات البيئة على الخادم فقط.
+                                    </Alert>
+                                ) : integration.has_api_key ? (
+                                    <Alert tone="neutral" title="المفتاح محمي">
+                                        المفتاح موجود لكنه مخفي للأمان. اضغط «تجديد المفتاح» إذا فقدته — المفتاح القديم يُلغى فوراً.
                                     </Alert>
                                 ) : null}
 
                                 <FormField
                                     id="integration-api-key"
                                     label="API Key"
-                                    hint="المفتاح ثابت لهذا الجهاز — انسخه وأعطِه لشريكك."
+                                    hint="Authorization: Bearer {api_key}"
                                 >
                                     <div className="flex gap-2">
                                         <Input
                                             id="integration-api-key"
                                             dir="ltr"
                                             readOnly
-                                            value={integration.api_key ?? `${integration.api_key_prefix ?? ''}••••••••`}
+                                            value={integration.api_key ?? `${integration.api_key_prefix ?? 'mrs_live_'}••••••••`}
                                         />
                                         {integration.api_key ? (
                                             <Button type="button" variant="secondary" size="sm" onClick={() => void copyText(integration.api_key!)}>
@@ -522,11 +536,14 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
                                     </div>
                                 </FormField>
 
-                                <Alert tone="neutral" title="طريقة الاستخدام">
-                                    <code dir="ltr" className="block text-sm">
-                                        POST /api/v1/messages/text<br />
-                                        Authorization: Bearer {'{api_key}'}<br />
-                                        {'{ "to": "+9639...", "message": "..." }'}
+                                <Alert tone="neutral" title="مثال إرسال">
+                                    <code dir="ltr" className="block whitespace-pre-wrap text-sm">
+{`POST /api/v1/messages/text
+Authorization: Bearer {api_key}
+Idempotency-Key: unique-id-123
+Content-Type: application/json
+
+{ "to": "+9639xxxxxxxx", "message": "مرحبا" }`}
                                     </code>
                                 </Alert>
 
@@ -538,7 +555,7 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
                                     className="w-full sm:w-auto"
                                 >
                                     <KeyRound className="size-4" />
-                                    تجديد API Key
+                                    تجديد المفتاح
                                 </Button>
                             </div>
                         ) : (

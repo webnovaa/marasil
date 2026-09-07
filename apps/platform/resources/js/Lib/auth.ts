@@ -50,7 +50,7 @@ export function dashboardLabel(user: AuthUser | null | undefined): string {
         return 'لوحة الإدارة';
     }
 
-    return 'لوحة العميل';
+    return 'لوحة التحكم';
 }
 
 export function homePath(user: AuthUser | null | undefined): string {

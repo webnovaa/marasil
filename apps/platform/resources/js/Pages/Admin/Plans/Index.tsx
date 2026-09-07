@@ -141,6 +141,7 @@ export default function AdminPlansIndex({ plans: initialPlans }: PageProps) {
         setError(null);
         const payload = {
             ...form,
+            max_api_keys: form.max_devices,
             slug: form.slug || undefined,
             features: textToFeatures(featuresText),
         };
@@ -407,17 +408,7 @@ export default function AdminPlansIndex({ plans: initialPlans }: PageProps) {
                                 </FormField>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <FormField id="keys" label="مفاتيح API">
-                                    <Input
-                                        type="number"
-                                        min={0}
-                                        value={form.max_api_keys}
-                                        onChange={(e) =>
-                                            setForm({ ...form, max_api_keys: Number(e.target.value) })
-                                        }
-                                    />
-                                </FormField>
-                                <FormField id="hooks" label="Webhooks">
+                                <FormField id="hooks" label="روابط الإشعارات (اختيارية)">
                                     <Input
                                         type="number"
                                         min={0}

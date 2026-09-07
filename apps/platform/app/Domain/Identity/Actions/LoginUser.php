@@ -81,6 +81,10 @@ final class LoginUser
             'expires_at' => now()->addDays(30),
         ]);
 
+        if (request()->hasSession()) {
+            request()->session()->put('auth_session_ulid', $authSession->ulid);
+        }
+
         SecurityEvent::query()->create([
             'user_id' => $user->id,
             'type' => 'login_success',

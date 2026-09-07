@@ -17,12 +17,14 @@ final class PlatformWhatsAppPageController extends Controller
         abort_unless(request()->user()?->hasPermission('settings.manage'), 403);
 
         $device = $service->device();
+        $snapshot = $service->engineSnapshot($device);
 
         return Inertia::render('Admin/PlatformWhatsApp/Index', [
             'device' => $device !== null ? PlatformDeviceResource::make($device)->resolve() : null,
             'isReady' => $service->isReady(),
             'engine' => (string) config('whatsapp.engine', 'mock'),
             'pairingAvailable' => config('whatsapp.engine') !== 'mock' || app()->environment(['local', 'testing']),
+            'engineStatus' => $snapshot['status'],
         ]);
     }
 }

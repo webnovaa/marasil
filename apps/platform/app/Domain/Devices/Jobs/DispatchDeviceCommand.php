@@ -30,7 +30,7 @@ final class DispatchDeviceCommand implements ShouldQueue
             $query->withTrashed();
         }
 
-        $device = $query->where('ulid', $this->deviceUlid)->first();
+        $device = $query->with('tenant')->where('ulid', $this->deviceUlid)->first();
 
         if ($device === null) {
             return;
@@ -42,10 +42,24 @@ final class DispatchDeviceCommand implements ShouldQueue
             return;
         }
 
+        $tenantUlid = $device->tenant?->ulid;
+        if ($this->command === 'create_session' && ($tenantUlid === null || $tenantUlid === '')) {
+            Log::warning('DispatchDeviceCommand skipped: platform device has no tenant', [
+                'device_ulid' => $this->deviceUlid,
+            ]);
+            $device->update([
+                'status' => DeviceStatus::Error,
+                'last_error_code' => 'TENANT_MISSING',
+                'last_error_message' => 'Device tenant is missing.',
+            ]);
+
+            return;
+        }
+
         try {
             match ($this->command) {
                 'create_session' => $client->createSession($device->ulid, [
-                    'tenant_id' => $device->tenant?->ulid,
+                    'tenant_id' => $tenantUlid,
                     'lease_generation' => $this->leaseGeneration ?? $device->lease_generation,
                 ]),
                 'disconnect' => $client->disconnect($device->ulid),

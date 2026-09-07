@@ -1,36 +1,23 @@
-@import '@fontsource/ibm-plex-sans-arabic/arabic-400.css';
-@import '@fontsource/ibm-plex-sans-arabic/arabic-500.css';
-@import '@fontsource/ibm-plex-sans-arabic/arabic-600.css';
-@import '@fontsource/ibm-plex-sans-arabic/arabic-700.css';
-@import '@fontsource/ibm-plex-sans-arabic/latin-400.css';
-@import '@fontsource/ibm-plex-sans-arabic/latin-500.css';
-@import '@fontsource/ibm-plex-sans-arabic/latin-600.css';
-@import '@fontsource/ibm-plex-sans-arabic/latin-700.css';
-@import '@fontsource/inter/latin-400.css';
-@import '@fontsource/inter/latin-500.css';
-@import '@fontsource/inter/latin-600.css';
-@import '@fontsource/inter/latin-700.css';
-@import '@fontsource/jetbrains-mono/latin-400.css';
-@import '@fontsource/jetbrains-mono/latin-500.css';
+@import './fonts.css';
 
 @import '../js/DesignSystem/tokens.css';
 @import '../js/DesignSystem/typography.css';
 @import '../js/DesignSystem/admin-shell.css';
 @import '../js/DesignSystem/tenant-shell.css';
 @import '../js/DesignSystem/auth-shell.css';
+@import '../js/DesignSystem/marketing.css';
 @import '../js/DesignSystem/dashboard.css';
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
-@source '../**/*.js';
-@source '../**/*.ts';
-@source '../**/*.tsx';
+@source '../js/**/*.tsx';
+@source '../js/**/*.ts';
 
 @theme {
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
   --font-mono: var(--font-mono);
+  --radius-full: var(--radius-full);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -210,6 +197,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'kern' 1, 'liga' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(var(--highlight) / 0.42);
+    color: rgb(var(--brand-950));
   }
 }
 

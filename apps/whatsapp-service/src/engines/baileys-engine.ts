@@ -32,8 +32,19 @@ export class BaileysWhatsAppEngine implements WhatsAppEngine {
   private async open(context: DeviceContext, restoring: boolean): Promise<void> {
     await this.disconnect(context.deviceId);
     const { state, saveCreds } = await this.repository.load(context.tenantId, context.deviceId);
-    const { version } = await fetchLatestBaileysVersion();
-    const socket = makeWASocket({ auth: state, version, printQRInTerminal: false, markOnlineOnConnect: false, syncFullHistory: false, generateHighQualityLinkPreview: false, logger: this.logger.child({ component: 'baileys', device_ref: this.repository.integrityHash(context.deviceId) }) as never });
+    let version: [number, number, number] | undefined;
+    try {
+      const latest = await Promise.race([
+        fetchLatestBaileysVersion(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('baileys version lookup timed out')), 5_000);
+        }),
+      ]);
+      version = latest.version;
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Could not fetch latest Baileys version; using library default');
+    }
+    const socket = makeWASocket({ auth: state, ...(version ? { version } : {}), printQRInTerminal: false, markOnlineOnConnect: false, syncFullHistory: false, generateHighQualityLinkPreview: false, logger: this.logger.child({ component: 'baileys', device_ref: this.repository.integrityHash(context.deviceId) }) as never });
     const runtime: Runtime = { context, socket, status: restoring ? 'reconnecting' : 'starting', reconnects: 0, stopped: false, pairingQr: null };
     this.runtimes.set(context.deviceId, runtime);
     await this.emit(restoring ? 'device.reconnecting' : 'device.starting', context);
@@ -45,10 +56,11 @@ export class BaileysWhatsAppEngine implements WhatsAppEngine {
         runtime.status = 'waiting_for_qr';
         await this.emit('device.qr_ready', context, { qr, expires_in: QR_TTL_SECONDS });
       }
-      if (connection === 'connecting') { runtime.status = 'connecting'; await this.emit('device.connecting', context); }
-      if (connection === 'open') {
+      if (connection === 'connecting' && runtime.status !== 'connected') { runtime.status = 'connecting'; await this.emit('device.connecting', context); }
+      const phone = socket.user?.id ? jidNormalizedUser(socket.user.id).split('@')[0] : undefined;
+      if ((connection === 'open' || Boolean(phone)) && connection !== 'close' && !qr && runtime.status !== 'connected') {
         runtime.pairingQr = null; runtime.status = 'connected'; runtime.reconnects = 0;
-        await this.emit('device.connected', context, { phone_number: socket.user?.id ? jidNormalizedUser(socket.user.id).split('@')[0] : undefined, display_name: socket.user?.name });
+        await this.emit('device.connected', context, { phone_number: phone, display_name: socket.user?.name });
       }
       if (connection === 'close') { runtime.pairingQr = null; await this.handleClose(runtime, lastDisconnect?.error); }
     });

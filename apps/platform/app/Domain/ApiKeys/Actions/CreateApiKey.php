@@ -7,37 +7,42 @@ namespace App\Domain\ApiKeys\Actions;
 use App\Domain\ApiKeys\ApiKeyPrefix;
 use App\Domain\ApiKeys\Enums\ApiKeyEnvironment;
 use App\Domain\ApiKeys\Models\ApiKey;
-use App\Domain\Subscriptions\Services\PlanLimitGuard;
 use App\Domain\Tenancy\Models\Tenant;
+use App\Support\ApiResponse;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
 
 final class CreateApiKey
 {
-    public function __construct(
-        private readonly PlanLimitGuard $planLimitGuard,
-    ) {}
-
     /**
-     * @param  array{name: string, environment?: string, abilities?: list<string>|null}  $data
+     * Create a device-bound API key only. Standalone keys are not supported.
+     *
+     * @param  array{name: string, environment?: string, abilities?: list<string>|null, device_id: int}  $data
      * @return array{api_key: ApiKey, plain_text_key: string}
      */
     public function handle(Tenant $tenant, array $data, bool $deviceBound = false): array
     {
-        if (! $deviceBound) {
-            $this->planLimitGuard->assertCanCreateApiKey($tenant);
+        $deviceId = $data['device_id'] ?? null;
+
+        if (! $deviceBound || $deviceId === null) {
+            throw new HttpResponseException(
+                ApiResponse::error(
+                    'DEVICE_KEY_REQUIRED',
+                    'API keys are provisioned automatically per device. Create or open a device to get integration credentials.',
+                    422,
+                )
+            );
         }
 
-        if (isset($data['device_id'])) {
-            $alreadyBound = ApiKey::query()
-                ->where('device_id', $data['device_id'])
-                ->whereNull('revoked_at')
-                ->exists();
+        $alreadyBound = ApiKey::query()
+            ->where('device_id', $deviceId)
+            ->whereNull('revoked_at')
+            ->exists();
 
-            if ($alreadyBound) {
-                throw new \Illuminate\Http\Exceptions\HttpResponseException(
-                    \App\Support\ApiResponse::error('DEVICE_KEY_EXISTS', 'This device already has an active API key.', 409)
-                );
-            }
+        if ($alreadyBound) {
+            throw new HttpResponseException(
+                ApiResponse::error('DEVICE_KEY_EXISTS', 'This device already has an active API key.', 409)
+            );
         }
 
         $environment = ApiKeyEnvironment::tryFrom($data['environment'] ?? 'live')
@@ -51,7 +56,7 @@ final class CreateApiKey
 
         $apiKey = ApiKey::query()->create([
             'tenant_id' => $tenant->id,
-            'device_id' => $data['device_id'] ?? null,
+            'device_id' => $deviceId,
             'name' => $data['name'],
             'prefix' => $prefix,
             'secret_hash' => hash('sha256', $plainTextKey),

@@ -1,11 +1,63 @@
 /**
- * Admin shell — flat reference layout, responsive rhythm, RTL-safe surfaces.
+ * App chrome — luxury Aubergine Noir sidebar + warm ivory workspace.
  */
 
 .admin-shell {
-  --admin-header-height: 3.5rem;
+  --admin-header-height: 4.25rem;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 50% at 100% 0%, rgb(var(--brand-200) / 0.35), transparent 46%),
+    rgb(var(--canvas));
+}
+
+.admin-shell aside:not([data-mobile='true']) {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  align-self: flex-start;
+}
+
+.admin-shell aside > div {
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--gradient-sidebar);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), var(--shadow-md);
+}
+
+.admin-shell aside[data-mobile='true'] {
+  background: var(--gradient-sidebar);
+  border: 0;
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-shell aside [data-active='true'] {
+  background: rgb(255 255 255 / 0.1) !important;
+  color: rgb(var(--sidebar-foreground)) !important;
+  border-inline-start: 3px solid rgb(var(--highlight)) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.admin-shell .shell-sidebar-footer a,
+.admin-shell .shell-sidebar-footer button {
+  color: rgb(var(--sidebar-foreground)) !important;
+  background: rgb(255 255 255 / 0.06) !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+.admin-shell .shell-sidebar-footer a:hover,
+.admin-shell .shell-sidebar-footer button:hover {
+  background: rgb(255 255 255 / 0.1) !important;
+}
+
+.admin-app-header {
+  border-bottom-color: rgb(var(--border-soft));
+  background: rgb(var(--surface) / 0.82);
+  backdrop-filter: blur(22px) saturate(1.25);
 }
 
 .admin-shell__content {
@@ -40,11 +92,12 @@
 }
 
 .admin-page-head h1 {
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.625rem, 3vw, 2.125rem);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   color: rgb(var(--text-primary));
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
 }
 
 .admin-page-head p {
@@ -54,15 +107,9 @@
   color: rgb(var(--muted));
 }
 
-.admin-shell [data-active='true'] {
-  background: rgb(var(--brand-900)) !important;
-  color: rgb(var(--inverse)) !important;
-  border-color: transparent !important;
-}
-
 .admin-panel {
   border: 1px solid rgb(var(--border-subtle));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: rgb(var(--surface));
   box-shadow: var(--shadow-sm);
 }
@@ -114,7 +161,7 @@
 /* Base Admin lists (similar to Tenant but tailored for data density) */
 .admin-table-container {
   overflow-x: auto;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid rgb(var(--border-subtle));
   background: rgb(var(--surface));
   box-shadow: var(--shadow-sm);

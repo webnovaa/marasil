@@ -16,8 +16,8 @@ type PricingProps = {
 
 const ALL_FEATURES = [
     'ربط أجهزة واتساب',
-    'مفاتيح API آمنة (Live/Test)',
-    'Webhooks موقّعة',
+    'مفتاح إرسال تلقائي مع كل جهاز',
+    'إشعارات فشل اختيارية / روابط سيرفر',
     'إرسال عبر طوابير موثوقة',
     'تتبّع حالات الإرسال',
     'لوحة تحكم عربية',
@@ -33,9 +33,9 @@ export default function Pricing({ plans }: PricingProps) {
         <MarketingLayout>
             <Head title="الأسعار والخطط" />
 
-            <section className="border-b border-[rgb(var(--border-soft))] bg-[rgb(var(--surface))]">
-                <div className="mx-auto max-w-[var(--content-max-analytics)] px-4 py-14 md:px-8">
-                    <p className="text-label text-[rgb(var(--brand-700))]">الأسعار</p>
+            <section className="marketing-page-head">
+                <div className="marketing-page-head__inner">
+                    <p className="marketing-kicker">الأسعار</p>
                     <h1 className="mt-3 text-h1 text-[rgb(var(--text-primary))]">خطط تناسب مرحلة نموك</h1>
                     <p className="mt-3 max-w-2xl text-body-lg text-[rgb(var(--muted))]">
                         تجربة مجانية للانطلاق، ثم خطط مدفوعة بحدود أجهزة ورسائل وWebhooks واضحة. التفعيل بعد موافقة الإدارة.
@@ -108,8 +108,7 @@ export default function Pricing({ plans }: PricingProps) {
                                     <th className="py-3 pe-4 text-start font-medium">الخطة</th>
                                     <th className="px-4 py-3 text-start font-medium">الأجهزة</th>
                                     <th className="px-4 py-3 text-start font-medium">رسائل / شهر</th>
-                                    <th className="px-4 py-3 text-start font-medium">مفاتيح API</th>
-                                    <th className="px-4 py-3 text-start font-medium">Webhooks</th>
+                                    <th className="px-4 py-3 text-start font-medium">إشعارات سيرفر</th>
                                     <th className="py-3 ps-4 text-start font-medium">السعر السنوي</th>
                                 </tr>
                             </thead>
@@ -126,7 +125,6 @@ export default function Pricing({ plans }: PricingProps) {
                                             </td>
                                             <td className="px-4 py-4">{plan.max_devices}</td>
                                             <td className="px-4 py-4">{plan.monthly_message_limit.toLocaleString('en-US')}</td>
-                                            <td className="px-4 py-4">{plan.max_api_keys}</td>
                                             <td className="px-4 py-4">{plan.max_webhooks}</td>
                                             <td className="py-4 ps-4 font-tabular">
                                                 {annual !== null

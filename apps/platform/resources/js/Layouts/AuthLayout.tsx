@@ -10,7 +10,7 @@ type AuthLayoutProps = PropsWithChildren<{
 
 export default function AuthLayout({ children, title, subtitle, footer }: AuthLayoutProps) {
     return (
-        <div lang="ar" dir="rtl" className="flex min-h-screen flex-col bg-[rgb(var(--canvas))] text-[rgb(var(--text))]">
+        <div lang="ar" dir="rtl" className="auth-shell flex min-h-screen flex-col text-[rgb(var(--text))]">
             <SiteHeader />
 
             <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12">

@@ -42,7 +42,10 @@ app.post('/internal/v1/devices/:deviceId/reconnect', route(async (req) => { cons
 app.post('/internal/v1/devices/:deviceId/disconnect', route(async (req) => { await engine.disconnect(deviceParam(req.params.deviceId)); return { status: 'disconnected' }; }));
 app.post('/internal/v1/devices/:deviceId/logout', route(async (req) => { await engine.logout(deviceParam(req.params.deviceId)); return { status: 'logged_out' }; }));
 app.delete('/internal/v1/devices/:deviceId/session', route(async (req) => { await engine.deleteSession(deviceParam(req.params.deviceId)); return { deleted: true }; }));
-app.get('/internal/v1/devices/:deviceId/status', route(async (req) => ({ status: await engine.getStatus(deviceParam(req.params.deviceId)) })));
+app.get('/internal/v1/devices/:deviceId/status', route(async (req) => {
+  const deviceId = deviceParam(req.params.deviceId);
+  return { status: await engine.getStatus(deviceId), pairing: engine.getPairingQr(deviceId) };
+}));
 app.post('/internal/v1/messages/send', route(async (req) => {
   const body = z.object({ command_id: z.string().min(8), message_id: z.string().min(8), device_id: z.string().min(8), tenant_id: z.string().min(8), lease_generation: z.number().int().nonnegative(), recipient: z.string().regex(/^\+[1-9]\d{7,14}$/), text: z.string().trim().min(1).max(4096) }).parse(req.body);
   const result = await engine.sendText({ commandId: body.command_id, messageId: body.message_id, deviceId: body.device_id, tenantId: body.tenant_id, leaseGeneration: body.lease_generation, recipient: body.recipient, text: body.text });
@@ -50,7 +53,7 @@ app.post('/internal/v1/messages/send', route(async (req) => {
 }));
 
 const server = http.createServer(app);
-const io = new SocketServer(server, { path: '/socket.io', cors: { origin: false }, maxHttpBufferSize: 64_000, transports: ['websocket'] });
+const io = new SocketServer(server, { path: '/socket.io', cors: { origin: false }, maxHttpBufferSize: 64_000, transports: ['websocket', 'polling'] });
 type SocketClaims = { tenant_id: string; user_id: string; device_id: string; purpose: 'device-realtime'; exp: number };
 function verifySocketToken(token: unknown): SocketClaims {
   if (typeof token !== 'string') throw new Error('missing token');

@@ -1,7 +1,16 @@
 # Production overlay: no Postgres/Redis/WhatsApp ports published.
-# Build frontend on the host/CI before deploy: (cd apps/platform && npm run build)
-# Vite and MinIO stay on the "dev" profile only (see compose.yaml).
-# Use: COMPOSE_PROFILES=prod COMPOSE_FILE=compose.yaml:compose.prod.yaml docker compose up --build -d
+# Frontend assets are baked into docker/php/Dockerfile (runtime stage).
+# Use:
+#   COMPOSE_PROFILES=prod docker compose -f compose.yaml -f compose.prod.yaml --profile prod up --build -d
+#
+# First boot (root .env):
+#   APP_ENV=production
+#   APP_DEBUG=false
+#   RUN_MIGRATIONS=true
+#   RUN_DB_SEED=true
+#   SUPER_ADMIN_PHONE=+9639xxxxxxx
+#   SUPER_ADMIN_PASSWORD=at_least_12_chars
+# After first successful seed, set RUN_DB_SEED=false (prefer explicit migrate later).
 
 services:
   nginx:
@@ -12,6 +21,15 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-false}
+      RUN_DB_SEED: ${RUN_DB_SEED:-false}
+      SUPER_ADMIN_PHONE: ${SUPER_ADMIN_PHONE:-}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
+      SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME:-Super Admin}
+      SUPER_ADMIN_COMPANY: ${SUPER_ADMIN_COMPANY:-}
     volumes: !override
       - platform_private_storage:/var/www/html/storage/app
 
@@ -20,6 +38,12 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      # Never migrate/seed from workers
+      RUN_MIGRATIONS: "false"
+      RUN_DB_SEED: "false"
     volumes: !override
       - platform_private_storage:/var/www/html/storage/app
 
@@ -28,6 +52,11 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      RUN_MIGRATIONS: "false"
+      RUN_DB_SEED: "false"
     volumes: !override
       - platform_private_storage:/var/www/html/storage/app
 

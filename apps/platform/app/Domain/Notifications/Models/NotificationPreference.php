@@ -16,6 +16,8 @@ class NotificationPreference extends Model
         'security_critical_enabled',
         'usage_alerts_enabled',
         'device_alerts_enabled',
+        'message_alerts_enabled',
+        'whatsapp_alerts_enabled',
     ];
 
     protected function casts(): array
@@ -25,6 +27,8 @@ class NotificationPreference extends Model
             'security_critical_enabled' => 'boolean',
             'usage_alerts_enabled' => 'boolean',
             'device_alerts_enabled' => 'boolean',
+            'message_alerts_enabled' => 'boolean',
+            'whatsapp_alerts_enabled' => 'boolean',
         ];
     }
 

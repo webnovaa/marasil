@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Domain\ApiKeys\Actions\CreateApiKey;
+use App\Domain\Devices\Actions\CreateDevice;
 use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\User;
@@ -43,13 +43,13 @@ class DemoDataSeeder extends Seeder
         DB::transaction(function (): void {
             $owner = $this->seedDemoOwner();
             $tenant = $owner->ownedTenants()->first()
-                ?? app(CreateTenantForOwner::class)->handle($owner, 'شركة تجريبية — راسل');
+                ?? app(CreateTenantForOwner::class)->handle($owner, 'شركة تجريبية — مراسيل');
 
             $trial = Plan::query()->where('slug', 'free-trial')->firstOrFail();
             $basic = Plan::query()->where('slug', 'basic')->firstOrFail();
 
             $this->seedActiveSubscription($tenant->id, $trial, $owner->id);
-            $this->seedApiKey($tenant);
+            $this->seedDemoDevice($tenant);
             $this->seedPendingUser();
             $this->seedPendingSubscriptionRequest($tenant->id, $owner->id, $basic);
         });
@@ -73,7 +73,7 @@ class DemoDataSeeder extends Seeder
             ['user_id' => $user->id],
             [
                 'full_name' => 'مستخدم تجريبي',
-                'company_name' => 'شركة تجريبية — راسل',
+                'company_name' => 'شركة تجريبية — مراسيل',
                 'metadata' => ['seeded' => true],
             ],
         );
@@ -133,21 +133,18 @@ class DemoDataSeeder extends Seeder
         }
     }
 
-    private function seedApiKey(\App\Domain\Tenancy\Models\Tenant $tenant): void
+    private function seedDemoDevice(\App\Domain\Tenancy\Models\Tenant $tenant): void
     {
-        $exists = \App\Domain\ApiKeys\Models\ApiKey::query()
+        $hasDevice = \App\Domain\Devices\Models\Device::query()
             ->where('tenant_id', $tenant->id)
-            ->whereNull('revoked_at')
             ->exists();
 
-        if ($exists) {
+        if ($hasDevice) {
             return;
         }
 
-        app(CreateApiKey::class)->handle($tenant, [
-            'name' => 'مفتاح تجريبي',
-            'environment' => 'test',
-            'abilities' => ['messages:send', 'messages:read'],
+        app(CreateDevice::class)->handle($tenant, [
+            'name' => 'جهاز تجريبي',
         ]);
     }
 

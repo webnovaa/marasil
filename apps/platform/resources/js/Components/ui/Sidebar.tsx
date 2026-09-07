@@ -110,7 +110,7 @@ export function SidebarProvider({
                             ...style,
                         } as React.CSSProperties
                     }
-                    className={cn('group/sidebar-wrapper flex min-h-svh w-full bg-[rgb(var(--canvas))] md:gap-2 md:p-2', className)}
+                    className={cn('group/sidebar-wrapper flex h-svh max-h-svh w-full overflow-hidden bg-[rgb(var(--canvas))]', className)}
                     data-sidebar-state={state}
                     {...props}
                 >
@@ -183,7 +183,7 @@ export function Sidebar({
             data-variant={variant}
             data-side={side}
             className={cn(
-                'group/sidebar hidden h-svh shrink-0 transition-[width] duration-[var(--motion-panel)] ease-[var(--ease-standard)] md:flex',
+                'group/sidebar sticky top-0 hidden h-svh shrink-0 self-start transition-[width] duration-[var(--motion-panel)] ease-[var(--ease-standard)] md:flex',
                 'w-[var(--sidebar-width)] data-[state=collapsed]:w-[var(--sidebar-width-icon)]',
                 side === 'right' ? 'order-first' : 'order-last',
                 variant === 'floating' && 'p-2',
@@ -253,7 +253,7 @@ export function SidebarInset({ className, ...props }: React.ComponentProps<'main
     return (
         <main
             className={cn(
-                'relative flex min-h-svh min-w-0 flex-1 flex-col overflow-x-clip rounded-[var(--radius-xl)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--canvas))] md:shadow-[var(--shadow-xs)]',
+                'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto bg-[rgb(var(--canvas))]',
                 className,
             )}
             {...props}

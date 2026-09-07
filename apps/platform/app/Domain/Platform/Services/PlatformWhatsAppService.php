@@ -16,6 +16,7 @@ use App\Domain\Devices\Services\WhatsAppServiceClient;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 final class PlatformWhatsAppService
 {
@@ -76,6 +77,34 @@ final class PlatformWhatsAppService
         $device = $this->device();
 
         return $device !== null && $device->isConnected();
+    }
+
+    /**
+     * @return array{status: string|null, pairing: array{qr: string, expires_in: int}|null}
+     */
+    public function engineSnapshot(?Device $device = null): array
+    {
+        $device ??= $this->device();
+        if ($device === null) {
+            return ['status' => null, 'pairing' => null];
+        }
+
+        try {
+            $result = $this->whatsAppClient->deviceHealth($device->ulid);
+            $data = is_array($result['data'] ?? null) ? $result['data'] : [];
+            $pairing = $data['pairing'] ?? null;
+            $qr = is_array($pairing) && isset($pairing['qr']) && is_string($pairing['qr']) ? $pairing['qr'] : '';
+
+            return [
+                'status' => isset($data['status']) ? (string) $data['status'] : null,
+                'pairing' => $qr !== '' ? [
+                    'qr' => $qr,
+                    'expires_in' => max(1, (int) ($pairing['expires_in'] ?? 20)),
+                ] : null,
+            ];
+        } catch (Throwable) {
+            return ['status' => null, 'pairing' => null];
+        }
     }
 
     public function connect(): Device

@@ -32,16 +32,32 @@ The test bootstrap applies forced PHPUnit settings to Docker environment variabl
 
 ## Production
 
-Use only compose.yaml + compose.prod.yaml with --profile prod. The production image builds frontend assets. Nginx must serve the exact same public/build output as PHP; the supplied Nginx bind mount expects the release's built apps/platform/public directory on the host.
+Use only `compose.yaml` + `compose.prod.yaml` with `--profile prod`. The production image builds frontend assets inside `docker/php/Dockerfile`.
 
-1. Back up PostgreSQL, storage/app/private and the whatsapp_sessions volume, plus encryption keys separately.
-2. Set APP_ENV=production, APP_DEBUG=false, SESSION_SECURE_COOKIE=true, and APP_URL to the HTTPS URL. Use OTP_CHANNEL=whatsapp only after connecting the platform device.
-3. Supply unique APP_KEY, INTERNAL_HMAC_SECRET, SESSION_MASTER_KEY (base64, 32 bytes), and OTP_PEPPER. Do not change keys for existing encrypted data without a migration plan.
-4. Build versioned release images and matching public/build assets. Terminate HTTPS at an external reverse proxy; supplied Nginx listens on port 80.
-5. Run migrations once, then start api, horizon, scheduler, nginx and whatsapp-service. Mount persistent private storage shared by PHP services.
-6. Check /up, /api/v1/health and WhatsApp /health/ready. Check Horizon and scheduler processes, then open public, tenant and admin pages.
-7. Pair or reconnect devices as needed. A process restart does not automatically reconstruct every in-memory Baileys runtime. Test delivery to an authorized recipient.
-8. Roll back to the prior image and matching frontend build if checks fail. Do not automatically reverse migrations or remove volumes.
+1. Back up PostgreSQL, storage, and the `whatsapp_sessions` volume, plus encryption keys separately.
+2. In the **root** `.env` (Compose `env_file` for `api`):
+   - `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, HTTPS `APP_URL`
+   - Unique `APP_KEY`, `INTERNAL_HMAC_SECRET`, `SESSION_MASTER_KEY`, `OTP_PEPPER`, DB/Redis passwords
+   - First boot: `RUN_MIGRATIONS=true`, `RUN_DB_SEED=true`, plus:
+     - `SUPER_ADMIN_PHONE=+9639…` (E.164)
+     - `SUPER_ADMIN_PASSWORD=` (min 12 chars)
+     - optional `SUPER_ADMIN_NAME` / `SUPER_ADMIN_COMPANY`
+3. Start stack: `docker compose -f compose.yaml -f compose.prod.yaml --profile prod up --build -d`
+   - The **api** php-fpm entrypoint runs migrate/seed when those flags are true (horizon/scheduler never seed).
+4. After first successful boot set `RUN_DB_SEED=false` (and usually `RUN_MIGRATIONS=false`), then recreate `api`.
+5. Check `/up`, `/api/v1/health`, WhatsApp `/health/ready`, Horizon, and admin/tenant UIs.
+6. Pair the platform WhatsApp device before relying on `OTP_CHANNEL=whatsapp`.
+
+Manual alternative without entrypoint flags:
+
+```sh
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan migrate --force
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan db:seed --force
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan optimize:clear
+```
+
+Local/dev seeders (`SuperAdminSeeder`, `DemoDataSeeder`) never run when `APP_ENV=production`.
+
 
 Message and webhook jobs use Redis/Horizon. The scheduler publishes pending outbox messages every minute, reconciles subscriptions hourly and prunes notifications daily. The current webhook implementation permits five total attempts, waiting 1m, 5m, 30m and 2h between attempts.
 

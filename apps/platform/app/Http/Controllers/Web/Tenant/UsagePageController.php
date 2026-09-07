@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Tenant;
 
-use App\Domain\ApiKeys\Models\ApiKey;
 use App\Domain\Devices\Models\Device;
 use App\Domain\Identity\Models\User;
 use App\Domain\Subscriptions\Services\SubscriptionGate;
@@ -28,12 +27,9 @@ final class UsagePageController extends Controller
             'usage' => [
                 'messages_used' => $tenant ? $meter->used($tenant) : 0,
                 'messages_limit' => (int) ($subscription?->monthly_message_limit ?? 0),
+                'daily_limit_per_device' => (int) ($subscription?->daily_message_limit_per_device ?? 0),
                 'devices_used' => $tenant ? Device::query()->where('tenant_id', $tenant->id)->count() : 0,
                 'devices_limit' => (int) ($subscription?->max_devices ?? 0),
-                'api_keys_used' => $tenant
-                    ? ApiKey::query()->where('tenant_id', $tenant->id)->whereNull('revoked_at')->count()
-                    : 0,
-                'api_keys_limit' => (int) ($subscription?->max_api_keys ?? 0),
                 'webhooks_used' => $tenant ? WebhookEndpoint::query()->where('tenant_id', $tenant->id)->count() : 0,
                 'webhooks_limit' => (int) ($subscription?->max_webhooks ?? 0),
             ],

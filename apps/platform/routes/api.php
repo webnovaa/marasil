@@ -72,7 +72,6 @@ Route::prefix('v1')->group(function (): void {
         Route::post('devices/{device}/socket-token', [DevicesController::class, 'socketToken'])->middleware('throttle:20,1');
 
         Route::get('api-keys', [ApiKeysController::class, 'index']);
-        Route::post('api-keys', [ApiKeysController::class, 'store']);
         Route::delete('api-keys/{apiKey}', [ApiKeysController::class, 'destroy']);
         Route::post('api-keys/{apiKey}/rotate', [ApiKeysController::class, 'rotate']);
 

@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { BrandLogo } from '@/Components/brand/BrandLogo';
 import { Separator } from '@/Components/ui/Separator';
 import { cn } from '@/Lib/cn';
 import { brand } from '@/DesignSystem/themes';
@@ -42,16 +43,13 @@ export function SiteFooter({ variant = 'default' }: SiteFooterProps) {
         >
             <div className="mx-auto grid max-w-[var(--content-max-analytics)] gap-10 px-4 py-12 md:grid-cols-4 md:px-8">
                 <div className="md:col-span-1">
+                    <BrandLogo
+                        href="/"
+                        tone={inverse ? 'inverse' : 'default'}
+                        className={inverse ? '[&_span:last-child]:text-[rgb(var(--inverse))]' : undefined}
+                    />
                     <p
-                        className={cn(
-                            'text-h3',
-                            inverse ? 'text-[rgb(var(--inverse))]' : 'text-[rgb(var(--brand-950))]',
-                        )}
-                    >
-                        {brand.arabicDisplayName}
-                    </p>
-                    <p
-                        className={cn('mt-1 text-caption', inverse ? 'text-[rgb(var(--brand-300))]' : 'text-[rgb(var(--muted))]')}
+                        className={cn('mt-3 text-caption', inverse ? 'text-[rgb(var(--brand-300))]' : 'text-[rgb(var(--muted))]')}
                         dir="ltr"
                     >
                         {brand.defaultDisplayName}
@@ -81,7 +79,7 @@ export function SiteFooter({ variant = 'default' }: SiteFooterProps) {
             >
                 <p>© {year} {brand.arabicDisplayName} · جميع الحقوق محفوظة</p>
                 <p>
-                    تعتمد خدمة الربط على بروتوكول غير رسمي؛ استخدمها فقط مع مستلمين موافقين.
+                    للاستخدام المشروع مع مستلمين موافقين فقط.
                 </p>
             </div>
         </footer>

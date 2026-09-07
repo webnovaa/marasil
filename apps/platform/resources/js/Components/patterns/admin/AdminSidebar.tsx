@@ -37,15 +37,17 @@ export function AdminSidebar() {
 
     return (
         <Sidebar side="right" variant="sidebar" collapsible="icon">
-            <SidebarHeader className="pb-1">
+            <SidebarHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2 px-1 py-1">
                     <div className="flex min-w-0 items-center gap-3">
                         {collapsed && !isMobile ? (
-                            <BrandMark appName={appName} size="md" />
+                            <BrandMark appName={appName} size="md" tone="inverse" />
                         ) : (
                             <div className="min-w-0">
-                                <BrandLogo appName={appName} href="/admin" />
-                                <p className="truncate text-caption text-[rgb(var(--muted))]">{t('shell.adminPanel')}</p>
+                                <BrandLogo appName={appName} href="/admin" tone="inverse" />
+                                <p className="mt-1 truncate text-caption text-[rgb(var(--sidebar-muted))]">
+                                    {t('shell.adminPanel')}
+                                </p>
                             </div>
                         )}
                     </div>
@@ -54,7 +56,7 @@ export function AdminSidebar() {
                             label={t('shell.closeMenu')}
                             variant="ghost"
                             size="icon-sm"
-                            className="shrink-0"
+                            className="shrink-0 text-[rgb(var(--sidebar-foreground))] hover:bg-[rgb(255_255_255/0.08)]"
                             onClick={() => setOpenMobile(false)}
                         >
                             <X className="size-5" />
@@ -63,12 +65,12 @@ export function AdminSidebar() {
                 </div>
             </SidebarHeader>
 
-            <SidebarSeparator />
+            <SidebarSeparator className="bg-[rgb(255_255_255/0.08)]" />
 
-            <SidebarContent className="gap-1 px-1">
+            <SidebarContent className="gap-2 px-1">
                 {navGroups.map((group) => (
                     <SidebarGroup key={group.id} className="py-1">
-                        <SidebarGroupLabel className="text-caption uppercase tracking-[0.08em]">
+                        <SidebarGroupLabel>
                             {group.label}
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
@@ -83,11 +85,11 @@ export function AdminSidebar() {
                                                 asChild
                                                 isActive={active}
                                                 tooltip={collapsed ? item.title : undefined}
-                                                className="h-10 px-3"
+                                                className="h-11 px-3 text-[rgb(var(--sidebar-foreground))] hover:bg-[rgb(255_255_255/0.08)]"
                                             >
                                                 <Link href={item.href} onClick={() => setOpenMobile(false)}>
-                                                    <Icon className="size-[1.125rem]" />
-                                                    <span className="text-[0.9375rem]">{item.title}</span>
+                                                    <Icon className="size-[1.125rem] opacity-90" />
+                                                    <span className="text-[0.9375rem] font-medium">{item.title}</span>
                                                 </Link>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
@@ -99,28 +101,28 @@ export function AdminSidebar() {
                 ))}
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-[rgb(var(--sidebar-border))] pb-3 pt-2">
-                <div className="flex items-center gap-3 px-1 py-2">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--neutral-bg))] text-sm font-bold text-[rgb(var(--brand-800))]">
+            <SidebarFooter className="shell-sidebar-footer border-t border-[rgb(255_255_255/0.08)] pb-3 pt-3">
+                <div className="flex items-center gap-3 rounded-[var(--radius-md)] bg-[rgb(255_255_255/0.06)] px-2 py-2">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--highlight))] text-sm font-bold text-[rgb(var(--highlight-foreground))]">
                         {(user?.full_name ?? user?.phone_e164 ?? 'م').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 group-data-[collapsible=icon]/sidebar:hidden">
-                        <p className="truncate text-sm font-semibold text-[rgb(var(--text))]">
+                        <p className="truncate text-sm font-semibold text-[rgb(var(--sidebar-foreground))]">
                             {user?.full_name ?? t('shell.defaultAdmin')}
                         </p>
-                        <p className="truncate text-caption text-[rgb(var(--muted))]" dir="ltr">
+                        <p className="truncate text-caption text-[rgb(var(--sidebar-muted))]" dir="ltr">
                             {user?.phone_e164 ?? '—'}
                         </p>
                     </div>
                 </div>
                 {user?.can_access_tenant ? (
-                    <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
+                    <div className="px-0 group-data-[collapsible=icon]/sidebar:hidden">
                         <LinkButton href={user?.home_path ?? '/tenant'} variant="secondary" size="sm" className="w-full">
                             {t('shell.tenantArea')}
                         </LinkButton>
                     </div>
                 ) : null}
-                <div className="px-1 group-data-[collapsible=icon]/sidebar:hidden">
+                <div className="px-0 group-data-[collapsible=icon]/sidebar:hidden">
                     <LinkButton href="/logout" method="post" as="button" variant="ghost" size="sm" className="w-full">
                         {t('shell.logout')}
                     </LinkButton>

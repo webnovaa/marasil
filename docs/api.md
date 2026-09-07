@@ -1,5 +1,7 @@
 # Public & Admin API — هيكل OpenAPI 3.1
 
+> **للمطوّرين الذين يريدون الربط بسرعة:** ابدأ بـ [`docs/developer-guide.md`](./developer-guide.md) أو افتح `/docs` داخل المنصة.
+
 > المرجع الحالي هو `packages/contracts/openapi.json` ونسخته المطابقة `docs/openapi.yaml`، ويغطي 71 عملية فعلية. الجداول أدناه تخطيط تاريخي وقد تتضمن مسارات مستقبلية؛ اعتمد المرجع الحالي والكود. لا توجد حاليًا واجهة Swagger UI أو عملية auth/refresh منفّذة.
 
 ## أساسيات
@@ -81,14 +83,17 @@
 | POST | `/devices/{deviceUlid}/disconnect` |
 | POST | `/devices/{deviceUlid}/logout` |
 | POST | `/devices/{deviceUlid}/test-message` |
+| POST | `/devices/{deviceUlid}/rotate-api-key` | يُنشأ مفتاح الإرسال تلقائياً مع الجهاز؛ التجديد من هنا |
 
-### API Keys
+### API Keys (توافق فقط)
+
+المفاتيح تُنشأ مع كل جهاز. لا يوجد إنشاء يدوي.
 
 | Method | Path | ملاحظة |
 |--------|------|--------|
-| GET/POST | `/api-keys` | السر يُعاد مرة واحدة عند الإنشاء |
+| GET | `/api-keys` | قائمة مفاتيح الأجهزة فقط |
 | DELETE | `/api-keys/{keyUlid}` | revoke |
-| POST | `/api-keys/{keyUlid}/rotate` | سر جديد مرة واحدة |
+| POST | `/api-keys/{keyUlid}/rotate` | سر جديد مرة واحدة (يفضّل من صفحة الجهاز) |
 
 ### Messages
 
