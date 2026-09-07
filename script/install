@@ -119,13 +119,28 @@ docker compose -f compose.yaml -f compose.dev.yaml --profile dev restart nginx
 # لا Mailpit — البريد: MAIL_MAILER=log
 
 
-# ─── 7) Production (ملخص) ───────────────────────────────────────────────────
+# ─── 7) Production (Docker) ─────────────────────────────────────────────────
 
-# 1) cd apps/platform && npm run build
-# 2) عيّن أسرار الإنتاج في .env (APP_DEBUG=false, APP_ENV=production)
-# 3) اختياري S3: MEDIA_DISK=s3 + AWS_*
+# في .env على السيرفر:
+#   COMPOSE_PROFILES=prod
+#   APP_ENV=production
+#   APP_DEBUG=false
+#   RUN_MIGRATIONS=true
+#   RUN_DB_SEED=true
+#   SUPER_ADMIN_PHONE=+9639xxxxxxx
+#   SUPER_ADMIN_PASSWORD=كلمة_مرور_قوية_12+
+#   (+ أسرار: APP_KEY, DB_PASSWORD, REDIS_PASSWORD, INTERNAL_HMAC_SECRET, …)
+
 docker compose -f compose.yaml -f compose.prod.yaml --profile prod up --build -d
+
+# بعد أول تشغيل ناجح: عطّل إعادة السييد
+#   RUN_DB_SEED=false
+# ثم: docker compose ... up -d --force-recreate api
+
+# أو يدوياً بدون entrypoint flags:
 docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan migrate --force
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan db:seed --force
+docker compose -f compose.yaml -f compose.prod.yaml --profile prod exec -T api php artisan optimize:clear
 
 
 # ─── 8) Backup قاعدة البيانات ─────────────────────────────────────────────────
@@ -135,7 +150,7 @@ make backup
 docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql
 
 
-# ─── 9) متغيرات .env المهمة ───────────────────────────────────────────────────
+# ─── 9) متغيرات .env المهمة (جذر المشروع → compose env_file) ─────────────────
 
 # DB_PASSWORD              → postgres
 # REDIS_PASSWORD           → redis
@@ -143,12 +158,14 @@ docker compose -f compose.yaml -f compose.dev.yaml --profile dev exec -T postgre
 # SESSION_MASTER_KEY       → تشفير جلسات WA (أو نفس INTERNAL_HMAC_SECRET)
 # FILESYSTEM_DISK=local    → تخزين محلي
 # MEDIA_DISK=local         → وسائط الرسائل
-# COMPOSE_PROFILES=dev
+# COMPOSE_PROFILES=dev|prod
+# RUN_MIGRATIONS / RUN_DB_SEED → أول إقلاع api (php-fpm) فقط
+# SUPER_ADMIN_*            → أدمن الإنتاج عند db:seed (ليس local)
 
-# ─── 9b) حسابات التطوير (من السيدرات — ليست في .env) ─────────────────────────
+# ─── 9b) حسابات التطوير المحلية (سيدرات — APP_ENV=local فقط) ─────────────────
 
 # بعد: docker compose ... exec -T api php artisan db:seed --force
-#   Super admin : +963900000000 / AdminPass123!
+#   Super admin : +963980212933 / webnova.m.w.2000
 #   Demo tenant : +963900000001 / DemoPass123!
 #   Admin       : http://localhost:8080/admin
 #   Tenant      : http://localhost:8080/tenant

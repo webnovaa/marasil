@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Bell, History, Pencil, Plus, RefreshCw, Server, Trash2, Webhook } from 'lucide-react';
 import { TenantEmptyState } from '@/Components/patterns/tenant/TenantEmptyState';
@@ -62,7 +62,7 @@ export default function WebhooksIndex({ preferences, owner_phone }: Props) {
     const [deliveriesHook, setDeliveriesHook] = useState<WebhookRow | null>(null);
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 
-    async function load() {
+    const load = useCallback(async () => {
         try {
             const res = await apiGet<{ webhooks: WebhookRow[] }>('/webhooks');
             if (res.success && res.data?.webhooks) {
@@ -74,11 +74,11 @@ export default function WebhooksIndex({ preferences, owner_phone }: Props) {
         } catch {
             setError(t('tenant.webhooks.errors.load'));
         }
-    }
+    }, [t]);
 
     useEffect(() => {
         void load();
-    }, []);
+    }, [load]);
 
     function savePreferences(next: Partial<Props['preferences']>) {
         setPrefsBusy(true);
@@ -181,59 +181,65 @@ export default function WebhooksIndex({ preferences, owner_phone }: Props) {
                             )}
                         </Alert>
 
-                        <label className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
+                        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
                             <input
+                                id="pref-message-alerts"
                                 type="checkbox"
                                 className="mt-1"
                                 checked={preferences.message_alerts_enabled}
                                 disabled={prefsBusy}
                                 onChange={(e) => savePreferences({ message_alerts_enabled: e.target.checked })}
+                                aria-describedby="pref-message-alerts-hint"
                             />
-                            <span>
-                                <span className="block font-semibold text-[rgb(var(--brand-950))]">
+                            <div>
+                                <label htmlFor="pref-message-alerts" className="block font-semibold text-[rgb(var(--brand-950))]">
                                     {t('tenant.webhooks.messageAlerts')}
-                                </span>
-                                <span className="mt-1 block text-body-sm text-[rgb(var(--muted))]">
+                                </label>
+                                <p id="pref-message-alerts-hint" className="mt-1 text-body-sm text-[rgb(var(--muted))]">
                                     {t('tenant.webhooks.messageAlertsHint')}
-                                </span>
-                            </span>
-                        </label>
+                                </p>
+                            </div>
+                        </div>
 
-                        <label className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
+                        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
                             <input
+                                id="pref-whatsapp-alerts"
                                 type="checkbox"
                                 className="mt-1"
                                 checked={preferences.whatsapp_alerts_enabled}
                                 disabled={prefsBusy || !preferences.message_alerts_enabled}
                                 onChange={(e) => savePreferences({ whatsapp_alerts_enabled: e.target.checked })}
+                                aria-describedby="pref-whatsapp-alerts-hint"
                             />
-                            <span>
-                                <span className="block font-semibold text-[rgb(var(--brand-950))]">
+                            <div>
+                                <label htmlFor="pref-whatsapp-alerts" className="block font-semibold text-[rgb(var(--brand-950))]">
                                     {t('tenant.webhooks.whatsappAlerts')}
-                                </span>
-                                <span className="mt-1 block text-body-sm text-[rgb(var(--muted))]">
+                                </label>
+                                <p id="pref-whatsapp-alerts-hint" className="mt-1 text-body-sm text-[rgb(var(--muted))]">
                                     {t('tenant.webhooks.whatsappAlertsHint')}
-                                </span>
-                            </span>
-                        </label>
+                                </p>
+                            </div>
+                        </div>
 
-                        <label className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
+                        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface-soft))] p-4">
                             <input
+                                id="pref-in-app-alerts"
                                 type="checkbox"
                                 className="mt-1"
                                 checked={preferences.in_app_enabled}
                                 disabled={prefsBusy}
                                 onChange={(e) => savePreferences({ in_app_enabled: e.target.checked })}
+                                aria-describedby="pref-in-app-alerts-hint"
                             />
-                            <span>
-                                <span className="block font-semibold text-[rgb(var(--brand-950))]">
+                            <div>
+                                <label htmlFor="pref-in-app-alerts" className="block font-semibold text-[rgb(var(--brand-950))]">
                                     {t('tenant.webhooks.inAppAlerts')}
-                                </span>
-                                <span className="mt-1 block text-body-sm text-[rgb(var(--muted))]">
+                                </label>
+                                <p id="pref-in-app-alerts-hint" className="mt-1 text-body-sm text-[rgb(var(--muted))]">
                                     {t('tenant.webhooks.inAppAlertsHint')}
-                                </span>
-                            </span>
-                        </label>
+                                </p>
+                            </div>
+                        </div>
 
                         <p className="flex items-center gap-2 text-caption text-[rgb(var(--muted))]">
                             <Bell className="size-3.5" />

@@ -43,7 +43,7 @@ class DemoDataSeeder extends Seeder
         DB::transaction(function (): void {
             $owner = $this->seedDemoOwner();
             $tenant = $owner->ownedTenants()->first()
-                ?? app(CreateTenantForOwner::class)->handle($owner, 'شركة تجريبية — راسل');
+                ?? app(CreateTenantForOwner::class)->handle($owner, 'شركة تجريبية — مراسيل');
 
             $trial = Plan::query()->where('slug', 'free-trial')->firstOrFail();
             $basic = Plan::query()->where('slug', 'basic')->firstOrFail();
@@ -73,7 +73,7 @@ class DemoDataSeeder extends Seeder
             ['user_id' => $user->id],
             [
                 'full_name' => 'مستخدم تجريبي',
-                'company_name' => 'شركة تجريبية — راسل',
+                'company_name' => 'شركة تجريبية — مراسيل',
                 'metadata' => ['seeded' => true],
             ],
         );

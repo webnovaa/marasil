@@ -69,12 +69,15 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
     const lastQr = useRef<string | null>(null);
     const tRef = useRef(t);
     const deviceIdRef = useRef(device?.id);
-    tRef.current = t;
-    deviceIdRef.current = device?.id;
     const deviceId = device?.id;
     const deviceStatus = device?.status;
     const isDeviceConnected = deviceStatus === 'connected' && engineStatus === 'connected';
     const shouldListen = Boolean(deviceId && pairingAvailable && !isDeviceConnected);
+
+    useEffect(() => {
+        tRef.current = t;
+        deviceIdRef.current = deviceId;
+    }, [t, deviceId]);
 
     const statusLabel = (status: string) => {
         const key = STATUS_KEYS[status];
@@ -118,7 +121,9 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
     }, [applyQr]);
 
     const refreshRef = useRef(refresh);
-    refreshRef.current = refresh;
+    useEffect(() => {
+        refreshRef.current = refresh;
+    }, [refresh]);
 
     useEffect(() => {
         if (!deviceId || isDeviceConnected) {
@@ -172,7 +177,9 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
     }, []);
 
     const connectRef = useRef(connect);
-    connectRef.current = connect;
+    useEffect(() => {
+        connectRef.current = connect;
+    }, [connect]);
 
     const saveProfile = async (e: FormEvent) => {
         e.preventDefault();
