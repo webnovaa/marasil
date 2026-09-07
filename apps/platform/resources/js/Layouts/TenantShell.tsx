@@ -28,7 +28,7 @@ export default function TenantShell({
     return (
         <SidebarProvider lang={locale} dir={dir === 'ltr' ? 'ltr' : 'rtl'} className="tenant-shell admin-shell">
             <TenantSidebar />
-            <SidebarInset className="overflow-x-clip rounded-none border-0 bg-[rgb(var(--canvas))] shadow-none">
+            <SidebarInset className="min-h-0 overflow-y-auto overflow-x-clip">
                 <TenantHeader title={title} />
                 <div
                     className={cn(

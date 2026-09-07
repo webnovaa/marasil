@@ -10,12 +10,13 @@ use App\Domain\Messaging\Models\Message;
 use App\Domain\Messaging\Models\MessageAttempt;
 use App\Domain\Messaging\Models\MessageStatusEvent;
 use App\Domain\Messaging\Services\MessageTransportPayload;
+use App\Domain\Notifications\Services\TenantOwnerAlertService;
+use App\Domain\Tenancy\Models\Tenant;
 use App\Domain\Usage\Services\UsageMeter;
 use App\Domain\Webhooks\Actions\DispatchWebhookDelivery;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Throwable;
 
 final class SendWhatsAppMessage implements ShouldQueue
@@ -32,6 +33,7 @@ final class SendWhatsAppMessage implements ShouldQueue
         WhatsAppServiceClient $client,
         DispatchWebhookDelivery $dispatchWebhook,
         UsageMeter $usageMeter,
+        TenantOwnerAlertService $ownerAlerts,
     ): void {
         $message = Message::query()->where('ulid', $this->messageUlid)->first();
 
@@ -69,6 +71,8 @@ final class SendWhatsAppMessage implements ShouldQueue
                     'error_code' => 'DEVICE_NOT_FOUND',
                     'error_message' => 'Device is no longer available.',
                 ]);
+                $this->notifyWebhooks($dispatchWebhook, $message, 'message.failed');
+                $this->alertOwnerOfFailure($ownerAlerts, $message);
 
                 return;
             }
@@ -107,6 +111,7 @@ final class SendWhatsAppMessage implements ShouldQueue
                 ]);
 
                 $this->notifyWebhooks($dispatchWebhook, $message, 'message.failed');
+                $this->alertOwnerOfFailure($ownerAlerts, $message);
 
                 return;
             }
@@ -152,6 +157,7 @@ final class SendWhatsAppMessage implements ShouldQueue
                 ]);
 
                 $this->notifyWebhooks($dispatchWebhook, $message, 'message.failed');
+                $this->alertOwnerOfFailure($ownerAlerts, $message);
             } else {
                 $message->update([
                     'status' => MessageStatus::Queued,
@@ -160,6 +166,33 @@ final class SendWhatsAppMessage implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    private function alertOwnerOfFailure(TenantOwnerAlertService $ownerAlerts, Message $message): void
+    {
+        $tenant = $message->relationLoaded('tenant')
+            ? $message->tenant
+            : Tenant::query()->with('owner')->find($message->tenant_id);
+
+        if ($tenant === null) {
+            return;
+        }
+
+        $to = (string) $message->recipient_e164;
+        $code = (string) ($message->error_code ?? 'FAILED');
+
+        $ownerAlerts->alert(
+            tenant: $tenant,
+            type: 'message.failed',
+            title: 'فشل إرسال رسالة',
+            body: "تعذر إرسال رسالة إلى {$to}. الرمز: {$code}. راجع صفحة الرسائل.",
+            data: [
+                'message_id' => $message->ulid,
+                'to' => $to,
+                'error_code' => $code,
+            ],
+            dedupeKey: 'message-failed:'.$message->ulid,
+        );
     }
 
     private function notifyWebhooks(DispatchWebhookDelivery $dispatchWebhook, Message $message, string $eventType): void

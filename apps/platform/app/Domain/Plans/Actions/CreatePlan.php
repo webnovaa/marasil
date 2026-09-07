@@ -27,7 +27,8 @@ final class CreatePlan
             'max_devices' => (int) ($data['max_devices'] ?? 1),
             'monthly_message_limit' => (int) ($data['monthly_message_limit'] ?? 100),
             'daily_message_limit_per_device' => (int) ($data['daily_message_limit_per_device'] ?? 20),
-            'max_api_keys' => (int) ($data['max_api_keys'] ?? 1),
+            // Keys are 1:1 with devices; keep column for subscription snapshots.
+            'max_api_keys' => (int) ($data['max_devices'] ?? $data['max_api_keys'] ?? 1),
             'max_webhooks' => (int) ($data['max_webhooks'] ?? 1),
             'max_media_size_mb' => (int) ($data['max_media_size_mb'] ?? 8),
             'allow_media' => (bool) ($data['allow_media'] ?? false),

@@ -15,23 +15,23 @@ final class DeviceIntegrationResource
      */
     public static function make(Device $device, Tenant $tenant, ?ApiKey $apiKey, ?string $plainTextKey = null): array
     {
-        $visibleKey = $plainTextKey ?: $apiKey?->plainTextSecret();
-
+        // Plaintext key is returned ONLY when freshly created/rotated — never re-decrypted from storage.
         $payload = [
             'username' => $tenant->slug,
             'device_name' => $device->name,
             'device_id' => $device->ulid,
             'api_key_prefix' => $apiKey?->prefix,
             'has_api_key' => $apiKey !== null && $apiKey->isUsable(),
+            'api_key_revealed' => $plainTextKey !== null && $plainTextKey !== '',
             'usage' => [
                 'authorization' => 'Authorization: Bearer {api_key}',
                 'send_text' => 'POST /api/v1/messages/text',
-                'note' => 'Device-bound keys do not require device_id in the request body.',
+                'note' => 'Device-bound keys do not require device_id in the request body. Copy the key now — it is shown only once.',
             ],
         ];
 
-        if ($visibleKey !== null && $visibleKey !== '') {
-            $payload['api_key'] = $visibleKey;
+        if ($plainTextKey !== null && $plainTextKey !== '') {
+            $payload['api_key'] = $plainTextKey;
         }
 
         return $payload;

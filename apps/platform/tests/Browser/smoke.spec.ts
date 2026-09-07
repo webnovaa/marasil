@@ -55,7 +55,7 @@ for (const admin of [false, true]) {
             await expect(page.getByRole('dialog')).toHaveCount(0);
         }
         await page.screenshot({ path: testInfo.outputPath('dashboard-ar.png'), fullPage: true });
-        const paths = admin ? ['/admin/users', '/admin/subscription-requests', '/admin/plans', '/admin/support'] : ['/devices', '/messages', '/api-keys', '/webhooks', '/subscription'];
+        const paths = admin ? ['/admin/users', '/admin/subscription-requests', '/admin/plans', '/admin/support'] : ['/devices', '/messages', '/webhooks', '/subscription'];
         for (const path of paths) await checkPage(page, path);
         const token = await page.locator('meta[name="csrf-token"]').getAttribute('content');
         await page.request.post('/locale', { headers: { 'X-CSRF-TOKEN': token ?? '', Referer: page.url() }, form: { locale: 'en' } });

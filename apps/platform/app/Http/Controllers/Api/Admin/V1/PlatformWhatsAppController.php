@@ -17,12 +17,15 @@ final class PlatformWhatsAppController extends Controller
     public function show(PlatformWhatsAppService $service): JsonResponse
     {
         $device = $service->device();
+        $snapshot = $service->engineSnapshot($device);
 
         return ApiResponse::success([
             'device' => $device !== null ? PlatformDeviceResource::make($device) : null,
             'is_ready' => $service->isReady(),
             'engine' => (string) config('whatsapp.engine', 'mock'),
             'otp_channel' => $this->otpChannelLabel(),
+            'pairing' => $snapshot['pairing'],
+            'engine_status' => $snapshot['status'],
         ]);
     }
 

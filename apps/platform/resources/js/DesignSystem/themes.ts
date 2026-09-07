@@ -10,6 +10,10 @@ export const brand = {
     docs: 'Marasil Docs',
     connect: 'Marasil Connect',
   },
+  /** Primary site lockup mark (ivory plate — use on UI surfaces). */
+  logoSrc: '/brand/logo-p.png',
+  /** Favicon / apple-touch / PWA icon (dark plate). */
+  iconSrc: '/brand/marasil-logo.png',
   /** Arabic label when app name is the English default. */
   displayName(appName: string): string {
     return appName === brand.defaultDisplayName ? brand.arabicDisplayName : appName;

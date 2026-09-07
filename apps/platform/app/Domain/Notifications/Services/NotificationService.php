@@ -29,12 +29,15 @@ final class NotificationService
                 'security_critical_enabled' => true,
                 'usage_alerts_enabled' => true,
                 'device_alerts_enabled' => true,
+                'message_alerts_enabled' => true,
+                'whatsapp_alerts_enabled' => true,
             ],
         );
 
         $isSecurity = str_starts_with($type, 'security.');
         $isUsage = str_starts_with($type, 'usage.');
         $isDevice = str_starts_with($type, 'device.');
+        $isMessage = str_starts_with($type, 'message.') || str_starts_with($type, 'webhook.');
 
         if (! ($prefs->in_app_enabled ?? true) && ! $isSecurity) {
             return null;
@@ -45,6 +48,10 @@ final class NotificationService
         }
 
         if ($isDevice && ! ($prefs->device_alerts_enabled ?? true)) {
+            return null;
+        }
+
+        if ($isMessage && ! ($prefs->message_alerts_enabled ?? true)) {
             return null;
         }
 

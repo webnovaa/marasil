@@ -47,18 +47,18 @@
   --neutral-900: 24 24 27;
   --neutral-950: 9 9 11;
 
-  /* Semantic surfaces — clean light, white & near-white */
-  --background: 250 250 250;
+  /* Semantic surfaces — warm ivory canvas, paper-white cards */
+  --background: 248 245 241;
   --foreground: 24 24 27;
-  --canvas: 250 250 250;
-  --canvas-subtle: 249 250 251;
-  --surface: 255 255 255;
+  --canvas: 248 245 241;
+  --canvas-subtle: 244 240 235;
+  --surface: 255 253 251;
   --surface-raised: 255 255 255;
-  --surface-soft: 244 244 245;
-  --surface-muted: 244 244 245;
-  --surface-hover: 244 244 245;
-  --surface-pressed: 244 244 245;
-  --surface-inverse: 24 24 27;
+  --surface-soft: 244 240 236;
+  --surface-muted: 244 240 236;
+  --surface-hover: 242 237 232;
+  --surface-pressed: 236 230 224;
+  --surface-inverse: 24 16 28;
 
   --card: 255 255 255;
   --card-foreground: 24 24 27;
@@ -78,11 +78,20 @@
   --subtle: 113 113 122;
   --inverse: 255 255 255;
 
-  /* Borders — crisp, visible */
-  --border: 212 212 216;
-  --border-subtle: 228 228 231;
-  --border-soft: 228 228 231;
-  --border-strong: 161 161 170;
+  /* Highlight — refined Electric Lime (sparing: nav, focus, emphasis) */
+  --highlight-50: 247 252 230;
+  --highlight-100: 234 245 188;
+  --highlight-400: 196 220 72;
+  --highlight-500: 174 198 40;
+  --highlight-600: 138 158 22;
+  --highlight: 196 220 72;
+  --highlight-foreground: 33 16 38;
+
+  /* Borders — warm, quiet */
+  --border: 226 220 214;
+  --border-subtle: 234 228 222;
+  --border-soft: 236 230 224;
+  --border-strong: 176 166 158;
   --border-brand: 116 62 124;
   --border-focus: 116 62 124;
   --input: 212 212 216;
@@ -108,10 +117,10 @@
   --muted-surface: 244 244 245;
   --muted-foreground: 82 82 91;
 
-  --ring: 116 62 124;
-  --ring-brand: 116 62 124;
+  --ring: 196 220 72;
+  --ring-brand: 196 220 72;
   --ring-offset: 255 255 255;
-  --focus-ring: 116 62 124;
+  --focus-ring: 196 220 72;
 
   /* Success */
   --success-50: 236 253 246;
@@ -218,8 +227,10 @@
   /* Gradients (CSS only — not for React inline) */
   --gradient-brand: linear-gradient(135deg, #211026 0%, #321a39 38%, #46234d 68%, #5b2a63 100%);
   --gradient-signature: linear-gradient(120deg, #321a39 0%, #4a2552 62%, #5b2a63 100%);
-  --gradient-soft-bg: linear-gradient(145deg, #fafafa 0%, #f5f5f5 48%, #f0eeee 100%);
-  --gradient-accent-glow: radial-gradient(circle, rgb(24 24 27 / 0.06) 0%, rgb(24 24 27 / 0) 72%);
+  --gradient-soft-bg: linear-gradient(145deg, #f8f5f1 0%, #f4f0eb 48%, #efe8e1 100%);
+  --gradient-accent-glow: radial-gradient(circle, rgb(196 220 72 / 0.16) 0%, rgb(196 220 72 / 0) 72%);
+  --gradient-sidebar: radial-gradient(120% 70% at 50% -20%, rgb(146 92 154 / 0.32), transparent 58%),
+    linear-gradient(180deg, #211026 0%, #1a0c20 100%);
 
   /* Spacing (4px base) */
   --space-1: 0.25rem;
@@ -235,18 +246,19 @@
   --space-20: 5rem;
 
   /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
 
-  /* Shadows — decisive, crisp, corporate (not soft/airy) */
-  --shadow-xs: 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-sm: 0 1px 3px rgb(24 24 27 / 0.1), 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-md: 0 4px 6px -2px rgb(24 24 27 / 0.08), 0 2px 4px -2px rgb(24 24 27 / 0.06);
-  --shadow-lg: 0 10px 15px -3px rgb(24 24 27 / 0.12), 0 4px 6px -4px rgb(24 24 27 / 0.08);
-  --shadow-dialog: 0 20px 25px -5px rgb(9 9 11 / 0.18), 0 8px 10px -6px rgb(9 9 11 / 0.12);
-  --shadow-focus: 0 0 0 3px rgb(116 62 124 / 0.28);
+  /* Shadows — aubergine-tinted, layered */
+  --shadow-xs: 0 1px 2px rgb(50 26 57 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(50 26 57 / 0.05), 0 8px 20px rgb(50 26 57 / 0.05);
+  --shadow-md: 0 8px 24px rgb(50 26 57 / 0.08), 0 2px 6px rgb(50 26 57 / 0.04);
+  --shadow-lg: 0 16px 40px rgb(50 26 57 / 0.12), 0 4px 12px rgb(50 26 57 / 0.06);
+  --shadow-dialog: 0 24px 48px rgb(9 9 11 / 0.2), 0 8px 16px rgb(50 26 57 / 0.08);
+  --shadow-focus: 0 0 0 3px rgb(196 220 72 / 0.35);
 
   /* Motion */
   --motion-fast: 120ms;
@@ -264,9 +276,9 @@
   --z-debug: 600;
 
   /* Layout dimensions */
-  --sidebar-width: 280px;
-  --sidebar-collapsed: 84px;
-  --topbar-height: 72px;
+  --sidebar-width: 272px;
+  --sidebar-collapsed: 80px;
+  --topbar-height: 68px;
   --content-max-analytics: 1600px;
   --content-max-forms: 1200px;
   --form-max: 720px;
@@ -293,15 +305,16 @@
   --brand-700-hex: #4A2451;
   --brand-600-hex: #743E7C;
 
-  /* Sidebar shell (shadcn-compatible) */
-  --sidebar-background: var(--surface);
-  --sidebar-foreground: var(--text-primary);
-  --sidebar-primary: var(--brand-700);
-  --sidebar-primary-foreground: var(--inverse);
-  --sidebar-accent: var(--brand-50);
-  --sidebar-accent-foreground: var(--brand-900);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring-brand);
+  /* Sidebar shell — Aubergine Noir */
+  --sidebar-background: 26 12 32;
+  --sidebar-foreground: 250 246 251;
+  --sidebar-muted: 186 164 192;
+  --sidebar-primary: 70 35 77;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 50 26 57;
+  --sidebar-accent-foreground: 250 246 251;
+  --sidebar-border: 70 35 77;
+  --sidebar-ring: var(--highlight);
 }
 
 @media (prefers-reduced-motion: reduce) {

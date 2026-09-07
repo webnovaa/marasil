@@ -16,7 +16,7 @@ export default function MarketingLayout({ children, className }: MarketingLayout
         <div
             lang={locale}
             dir={dir === 'ltr' ? 'ltr' : 'rtl'}
-            className="flex min-h-screen flex-col bg-[rgb(var(--canvas))] text-[rgb(var(--text))]"
+            className="marketing-shell flex min-h-screen flex-col text-[rgb(var(--text))]"
         >
             <SiteHeader />
             <main className={cn('flex-1', className)}>{children}</main>

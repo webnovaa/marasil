@@ -17,7 +17,7 @@ export default function AdminShell({ children, title, description, hidePageHead 
     return (
         <SidebarProvider lang={locale} dir={dir === 'ltr' ? 'ltr' : 'rtl'} className="admin-shell">
             <AdminSidebar />
-            <SidebarInset className="overflow-x-clip rounded-none border-0 bg-[rgb(var(--canvas))] shadow-none">
+            <SidebarInset className="min-h-0 overflow-y-auto overflow-x-clip">
                 <AdminHeader />
                 <div className="admin-shell__content flex flex-1 flex-col gap-5 sm:gap-6">
                     {!hidePageHead ? <header className="admin-page-head">

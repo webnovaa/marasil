@@ -71,10 +71,9 @@ function billingUnit(plan: PublicPlan, billing: BillingCycle): string {
 
 function featureLines(plan: PublicPlan): string[] {
     return [
-        `${plan.max_devices} جهاز`,
+        `${plan.max_devices} جهاز (مفتاح إرسال تلقائي لكل جهاز)`,
         `${plan.monthly_message_limit.toLocaleString('en-US')} رسالة / شهر`,
-        `${plan.max_api_keys} مفتاح API`,
-        `${plan.max_webhooks} Webhook`,
+        `${plan.max_webhooks} رابط إشعارات اختياري`,
         plan.allow_media ? `وسائط حتى ${plan.max_media_size_mb}MB` : 'بدون وسائط',
         plan.allow_team_members ? 'أعضاء فريق' : 'مستخدم واحد',
         plan.allow_priority_queue ? 'طابور أولوية' : 'طابور قياسي',
@@ -109,11 +108,11 @@ export function PlanCard({
     return (
         <article
             className={cn(
-                'relative flex h-full flex-col rounded-[var(--radius-lg)] border bg-[rgb(var(--surface))] p-6 shadow-[var(--shadow-xs)]',
+                'relative flex h-full flex-col rounded-[var(--radius-xl)] border bg-[rgb(var(--surface))] p-6 shadow-[var(--shadow-xs)]',
                 selected
-                    ? 'border-[rgb(var(--accent-400))] ring-2 ring-[rgb(var(--accent-200))]'
+                    ? 'border-[rgb(var(--brand-400))] ring-2 ring-[rgb(var(--brand-200))]'
                     : highlighted
-                      ? 'border-[rgb(var(--brand-600))] shadow-[var(--shadow-md)]'
+                      ? 'border-[rgb(var(--brand-700))] shadow-[var(--shadow-md)] before:absolute before:inset-x-8 before:top-0 before:h-1 before:rounded-b-full before:bg-[rgb(var(--highlight))]'
                       : 'border-[rgb(var(--border))]',
             )}
         >

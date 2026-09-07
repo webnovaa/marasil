@@ -46,6 +46,8 @@ final class NotificationsPageController extends Controller
                 'in_app_enabled' => $prefs->in_app_enabled,
                 'usage_alerts_enabled' => $prefs->usage_alerts_enabled,
                 'device_alerts_enabled' => $prefs->device_alerts_enabled,
+                'message_alerts_enabled' => $prefs->message_alerts_enabled ?? true,
+                'whatsapp_alerts_enabled' => $prefs->whatsapp_alerts_enabled ?? true,
             ],
         ]);
     }
@@ -76,6 +78,8 @@ final class NotificationsPageController extends Controller
             'in_app_enabled' => ['sometimes', 'boolean'],
             'usage_alerts_enabled' => ['sometimes', 'boolean'],
             'device_alerts_enabled' => ['sometimes', 'boolean'],
+            'message_alerts_enabled' => ['sometimes', 'boolean'],
+            'whatsapp_alerts_enabled' => ['sometimes', 'boolean'],
         ]);
 
         NotificationPreference::query()->updateOrCreate(

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Tenant;
 
-use App\Domain\ApiKeys\Models\ApiKey;
 use App\Domain\Devices\Models\Device;
 use App\Domain\Identity\Models\User;
 use App\Domain\Messaging\Services\DashboardActivity;
@@ -30,9 +29,6 @@ final class DashboardPageController extends Controller
         $stats = [
             'devices' => $tenant
                 ? Device::query()->where('tenant_id', $tenant->id)->count()
-                : 0,
-            'api_keys' => $tenant
-                ? ApiKey::query()->where('tenant_id', $tenant->id)->whereNull('revoked_at')->count()
                 : 0,
             'webhooks' => $tenant
                 ? WebhookEndpoint::query()->where('tenant_id', $tenant->id)->count()

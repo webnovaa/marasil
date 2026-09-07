@@ -42,6 +42,21 @@ final class UsageMeter
                 );
             }
 
+            $dailyLimit = (int) $subscription->daily_message_limit_per_device;
+            if ($dailyLimit > 0 && $message->device_id !== null) {
+                $usedToday = Message::query()
+                    ->where('device_id', $message->device_id)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->where('id', '!=', $message->id)
+                    ->count();
+
+                if ($usedToday >= $dailyLimit) {
+                    throw new HttpResponseException(
+                        ApiResponse::error('DAILY_DEVICE_QUOTA_EXCEEDED', 'Daily message limit for this device reached.', 403)
+                    );
+                }
+            }
+
             UsageLedgerEntry::query()->create([
                 'tenant_id' => $tenant->id,
                 'message_id' => $message->id,

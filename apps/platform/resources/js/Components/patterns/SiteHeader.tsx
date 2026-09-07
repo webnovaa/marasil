@@ -30,7 +30,7 @@ export function SiteHeader() {
     const dashboardText = dashboardLabel(user);
 
     return (
-        <header className="sticky top-0 z-[var(--z-sticky)] border-b border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
+        <header className="sticky top-0 z-[var(--z-sticky)] border-b border-[rgb(var(--border-soft))] bg-[rgb(var(--surface)/0.82)] backdrop-blur-xl">
             <div className="mx-auto flex h-[var(--topbar-height)] max-w-[var(--content-max-analytics)] items-center justify-between gap-4 px-4 md:px-8">
                 <BrandLogo appName={appName} href="/" />
 
@@ -39,7 +39,7 @@ export function SiteHeader() {
                         <a
                             key={item.href}
                             href={item.href}
-                            className="text-sm font-medium text-[rgb(var(--muted))] transition-colors hover:text-[rgb(var(--brand-700))]"
+                            className="text-sm font-medium text-[rgb(var(--muted))] transition-colors hover:text-[rgb(var(--brand-900))]"
                         >
                             {item.label}
                         </a>

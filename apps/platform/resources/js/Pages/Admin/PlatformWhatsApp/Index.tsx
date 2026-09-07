@@ -25,11 +25,17 @@ type PlatformDevice = {
     last_error_code: string | null;
 };
 
+type PairingPayload = {
+    qr: string;
+    expires_in: number;
+};
+
 type PageProps = {
     device: PlatformDevice | null;
     isReady: boolean;
     engine: string;
     pairingAvailable: boolean;
+    engineStatus?: string | null;
 };
 
 const STATUS_KEYS: Record<string, string> = {
@@ -47,9 +53,10 @@ const STATUS_KEYS: Record<string, string> = {
     error: 'platform.status.error',
 };
 
-export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, engine, pairingAvailable }: PageProps) {
+export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, engine, pairingAvailable, engineStatus: initialEngineStatus }: PageProps) {
     const { t } = useI18n();
     const [device, setDevice] = useState<PlatformDevice | null>(initialDevice);
+    const [engineStatus, setEngineStatus] = useState<string | null>(initialEngineStatus ?? null);
     const [ready, setReady] = useState(isReady);
     const [displayName, setDisplayName] = useState(initialDevice?.display_name ?? 'Marasil');
     const [qrImage, setQrImage] = useState<string | null>(null);
@@ -58,48 +65,79 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [confirmAction, setConfirmAction] = useState<'disconnect' | 'logout' | 'delete' | null>(null);
-    const connectStarted = useRef(false);
+    const pairingRequested = useRef(false);
+    const lastQr = useRef<string | null>(null);
+    const tRef = useRef(t);
+    const deviceIdRef = useRef(device?.id);
+    tRef.current = t;
+    deviceIdRef.current = device?.id;
     const deviceId = device?.id;
     const deviceStatus = device?.status;
-    const isDeviceConnected = deviceStatus === 'connected';
+    const isDeviceConnected = deviceStatus === 'connected' && engineStatus === 'connected';
+    const shouldListen = Boolean(deviceId && pairingAvailable && !isDeviceConnected);
 
     const statusLabel = (status: string) => {
         const key = STATUS_KEYS[status];
         return key ? t(key) : status;
     };
 
-    const refresh = useCallback(async () => {
-        const res = await adminGet<{ device: PlatformDevice | null; is_ready: boolean }>('/platform-whatsapp');
-        if (res.success && res.data) {
-            setDevice(res.data.device);
-            setReady(res.data.is_ready);
-            if (res.data.device?.display_name) {
-                setDisplayName(res.data.device.display_name);
-            }
+    const applyQr = useCallback(async (payload: PairingPayload) => {
+        if (!payload.qr) {
+            return;
+        }
+
+        if (lastQr.current === payload.qr) {
+            setQrSeconds(Math.max(1, payload.expires_in));
+            return;
+        }
+
+        try {
+            const img = await QRCode.toDataURL(payload.qr, { width: 280, margin: 2 });
+            lastQr.current = payload.qr;
+            setQrImage(img);
+            setQrSeconds(Math.max(1, payload.expires_in));
+            setError(null);
+        } catch {
+            setError(tRef.current('platform.connectError'));
         }
     }, []);
 
+    const refresh = useCallback(async () => {
+        const res = await adminGet<{ device: PlatformDevice | null; is_ready: boolean; pairing?: PairingPayload | null; engine_status?: string | null }>('/platform-whatsapp');
+        if (res.success && res.data) {
+            setDevice(res.data.device);
+            setReady(res.data.is_ready);
+            setEngineStatus(res.data.engine_status ?? null);
+            if (res.data.device?.display_name) {
+                setDisplayName(res.data.device.display_name);
+            }
+            if (res.data.pairing?.qr) {
+                void applyQr(res.data.pairing);
+            }
+        }
+    }, [applyQr]);
+
     const refreshRef = useRef(refresh);
+    refreshRef.current = refresh;
 
     useEffect(() => {
-        refreshRef.current = refresh;
-    }, [refresh]);
-
-    useEffect(() => {
-        if (!deviceId || !deviceStatus || ['connected', 'failed', 'error', 'logged_out'].includes(deviceStatus)) {
+        if (!deviceId || isDeviceConnected) {
             return;
         }
 
         const interval = window.setInterval(() => {
             void refreshRef.current();
-        }, 3000);
+        }, 5000);
 
         return () => window.clearInterval(interval);
-    }, [deviceId, deviceStatus]);
+    }, [deviceId, isDeviceConnected]);
 
     useEffect(() => {
         if (qrSeconds <= 0) {
-            if (qrSeconds === 0) setQrImage(null);
+            if (qrSeconds === 0) {
+                lastQr.current = null;
+                setQrImage(null);
+            }
             return;
         }
 
@@ -107,43 +145,34 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
         return () => window.clearTimeout(timer);
     }, [qrSeconds]);
 
-    const setup = async () => {
+    const connect = useCallback(async () => {
         setBusy(true);
         setError(null);
-        try {
-            const res = await adminPost<{ device: PlatformDevice }>('/platform-whatsapp/setup');
-            if (res.success && res.data?.device) {
-                setDevice(res.data.device);
-                setSuccess(t('platform.setupSuccess'));
-            } else {
-                setError(t('common.error'));
-            }
-        } catch {
-            setError(t('common.error'));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const connect = async () => {
-        if (!device) {
-            await setup();
-        }
-        setBusy(true);
-        setError(null);
+        lastQr.current = null;
         setQrImage(null);
         setQrSeconds(0);
         try {
+            if (!deviceIdRef.current) {
+                const setupRes = await adminPost<{ device: PlatformDevice }>('/platform-whatsapp/setup');
+                if (!setupRes.success || !setupRes.data?.device) {
+                    throw new Error('setup failed');
+                }
+                setDevice(setupRes.data.device);
+                setSuccess(tRef.current('platform.setupSuccess'));
+            }
             const res = await adminPost<{ device: PlatformDevice }>('/platform-whatsapp/connect');
             if (res.success && res.data?.device) {
                 setDevice(res.data.device);
             }
         } catch {
-            setError(t('platform.connectError'));
+            setError(tRef.current('platform.connectError'));
         } finally {
             setBusy(false);
         }
-    };
+    }, []);
+
+    const connectRef = useRef(connect);
+    connectRef.current = connect;
 
     const saveProfile = async (e: FormEvent) => {
         e.preventDefault();
@@ -202,6 +231,7 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
                 if (deleted.success) {
                     setDevice(null);
                     setReady(false);
+                    lastQr.current = null;
                     setQrImage(null);
                     setQrSeconds(0);
                     setSuccess(t('platform.deleted'));
@@ -213,6 +243,7 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
             if (res.success && res.data?.device) {
                 setDevice(res.data.device);
                 setReady(false);
+                lastQr.current = null;
                 setQrImage(null);
                 setQrSeconds(0);
             }
@@ -224,99 +255,99 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
         }
     };
 
-    // Socket.IO QR pairing
     useEffect(() => {
-        if (!deviceId || isDeviceConnected || !pairingAvailable) {
-            connectStarted.current = false;
+        if (!deviceId) {
+            pairingRequested.current = false;
+        }
+    }, [deviceId]);
+
+    useEffect(() => {
+        if (!pairingAvailable || isDeviceConnected || pairingRequested.current) {
+            return;
+        }
+
+        pairingRequested.current = true;
+        void connectRef.current();
+    }, [deviceId, isDeviceConnected, pairingAvailable]);
+
+    useEffect(() => {
+        if (!shouldListen || !deviceId) {
             return;
         }
 
         let socket: Socket | null = null;
         let cancelled = false;
+        let tokenTimer: number | undefined;
 
-        const start = async () => {
-            if (connectStarted.current) return;
-            connectStarted.current = true;
-
-            try {
-                const tokenRes = await adminPost<{ token: string }>('/platform-whatsapp/socket-token');
-                if (!tokenRes.success || !tokenRes.data?.token || cancelled) {
-                    connectStarted.current = false;
-                    if (!cancelled) setError(t('platform.connectError'));
-                    return;
-                }
-
-                socket = io(window.location.origin, {
-                    path: '/socket.io',
-                    transports: ['websocket', 'polling'],
-                    reconnection: true,
-                    reconnectionAttempts: Infinity,
-                    auth: { token: tokenRes.data.token },
-                });
-
-                socket.io.on('reconnect_attempt', () => {
-                    void adminPost<{ token: string }>('/platform-whatsapp/socket-token').then((fresh) => {
-                        if (fresh.success && fresh.data?.token && socket) {
-                            socket.auth = { token: fresh.data.token };
-                        }
-                    });
-                });
-
-                socket.on('device.qr_ready', async (payload: { qr?: string; expires_in?: number }) => {
-                    if (payload.qr) {
-                        try {
-                            const img = await QRCode.toDataURL(payload.qr, { width: 280, margin: 2 });
-                            setQrImage(img);
-                            setQrSeconds(Math.max(1, payload.expires_in ?? 20));
-                            setError(null);
-                        } catch {
-                            setError(t('platform.connectError'));
-                        }
-                    }
-                    void refresh();
-                });
-
-                socket.on('connect_error', () => {
-                    connectStarted.current = false;
-                    setError(t('platform.connectError'));
-                });
-
-                socket.on('device.connected', (payload: { phone_number?: string; display_name?: string }) => {
-                    setQrImage(null);
-                    setQrSeconds(0);
-                    setReady(true);
-                    setDevice((current) => current ? {
-                        ...current,
-                        status: 'connected',
-                        phone_e164: payload.phone_number
-                            ? `+${String(payload.phone_number).replace(/^\+/, '')}`
-                            : current.phone_e164,
-                        display_name: payload.display_name ?? current.display_name,
-                        last_connected_at: new Date().toISOString(),
-                    } : current);
-                    setSuccess(t('platform.connectedSuccess'));
-                    window.setTimeout(() => void refresh(), 500);
-                });
-
-                socket.on('device.disconnected', () => void refresh());
-                socket.on('device.logged_out', () => {
-                    setQrImage(null);
-                    setQrSeconds(0);
-                    void refresh();
-                });
-            } catch {
-                connectStarted.current = false;
-            }
+        const fetchToken = async (): Promise<string | null> => {
+            const tokenRes = await adminPost<{ token: string }>('/platform-whatsapp/socket-token');
+            return tokenRes.success ? tokenRes.data?.token ?? null : null;
         };
 
-        void start();
+        void (async () => {
+            const token = await fetchToken();
+            if (!token || cancelled) {
+                return;
+            }
+
+            socket = io(window.location.origin, {
+                path: '/socket.io',
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 8,
+                reconnectionDelay: 2000,
+                reconnectionDelayMax: 15000,
+                auth: { token },
+            });
+
+            tokenTimer = window.setInterval(() => {
+                void fetchToken().then((fresh) => {
+                    if (fresh && socket) {
+                        socket.auth = { token: fresh };
+                    }
+                });
+            }, 60_000);
+
+            socket.on('device.qr_ready', (payload: { qr?: string; expires_in?: number }) => {
+                if (payload.qr) {
+                    void applyQr({ qr: payload.qr, expires_in: payload.expires_in ?? 20 });
+                }
+            });
+
+            socket.on('device.connected', (payload: { phone_number?: string; display_name?: string }) => {
+                lastQr.current = null;
+                setQrImage(null);
+                setQrSeconds(0);
+                setReady(true);
+                setEngineStatus('connected');
+                setDevice((current) => current ? {
+                    ...current,
+                    status: 'connected',
+                    phone_e164: payload.phone_number
+                        ? `+${String(payload.phone_number).replace(/^\+/, '')}`
+                        : current.phone_e164,
+                    display_name: payload.display_name ?? current.display_name,
+                    last_connected_at: new Date().toISOString(),
+                } : current);
+                setSuccess(tRef.current('platform.connectedSuccess'));
+            });
+
+            socket.on('device.logged_out', () => {
+                lastQr.current = null;
+                setQrImage(null);
+                setQrSeconds(0);
+                void refreshRef.current();
+            });
+        })();
 
         return () => {
             cancelled = true;
+            if (tokenTimer !== undefined) {
+                window.clearInterval(tokenTimer);
+            }
             socket?.disconnect();
-            connectStarted.current = false;
         };
-    }, [deviceId, isDeviceConnected, pairingAvailable, refresh, t]);
+    }, [applyQr, deviceId, shouldListen]);
 
     return (
         <AdminShell title={t('platform.title')}>
@@ -361,8 +392,8 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
                                 <div className="flex flex-wrap items-center gap-2">
                                     <h2 className="text-lg font-semibold">{device?.display_name ?? t('platform.notConfigured')}</h2>
                                     {device && (
-                                        <Badge tone={device.status === 'connected' ? 'success' : 'neutral'}>
-                                            {statusLabel(device.status)}
+                                        <Badge tone={isDeviceConnected ? 'success' : 'neutral'}>
+                                            {statusLabel(isDeviceConnected ? 'connected' : device.status)}
                                         </Badge>
                                     )}
                                 </div>
@@ -383,11 +414,11 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
                             </FormField>
                             <div className="flex flex-wrap gap-2">
                                 {!device && (
-                                    <Button type="button" onClick={() => void setup()} disabled={busy}>
+                                    <Button type="button" onClick={() => void connect()} disabled={busy}>
                                         {t('platform.createAccount')}
                                     </Button>
                                 )}
-                                {device && device.status !== 'connected' && (
+                                {device && !isDeviceConnected && (
                                     <Button type="button" onClick={() => void connect()} disabled={busy}>
                                         <RefreshCw className="h-4 w-4" />
                                         {t('platform.connect')}
@@ -414,7 +445,7 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
                         <p className="mt-1 text-sm text-neutral-600">{t('platform.qrHint')}</p>
 
                         <div className="mt-6 flex flex-col items-center justify-center">
-                            {device?.status === 'connected' ? (
+                            {isDeviceConnected ? (
                                 <div className="flex flex-col items-center gap-3 py-8 text-emerald-600">
                                     <CheckCircle2 className="h-16 w-16" />
                                     <p className="font-medium">{t('platform.connectedSuccess')}</p>
@@ -428,12 +459,14 @@ export default function PlatformWhatsAppIndex({ device: initialDevice, isReady, 
                                 </div>
                             ) : (
                                 <div className="flex h-64 w-64 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-500">
-                                    {device ? t('platform.waitingQr') : t('platform.createFirst')}
+                                    {device
+                                        ? t(['pending', 'starting', 'connecting', 'reconnecting'].includes(device.status) ? 'platform.startingPairing' : 'platform.waitingQr')
+                                        : t('platform.createFirst')}
                                 </div>
                             )}
                         </div>
 
-                        {device && device.status === 'connected' && (
+                        {device && isDeviceConnected && (
                             <div className="mt-4 flex flex-wrap gap-2">
                                 <Button type="button" variant="secondary" size="sm" onClick={() => setConfirmAction('disconnect')} disabled={busy}>
                                     <PowerOff className="h-4 w-4" />
