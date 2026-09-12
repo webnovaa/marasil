@@ -13,11 +13,13 @@ use App\Http\Controllers\Api\Admin\V1\UsersController as AdminUsersController;
 use App\Http\Controllers\Api\Internal\V1\WhatsAppEventsController;
 use App\Http\Controllers\Api\V1\ApiKeysController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\CheckNumberController;
 use App\Http\Controllers\Api\V1\DevicesController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessagesController;
 use App\Http\Controllers\Api\V1\PlansController;
+use App\Http\Controllers\Api\V1\SendQuickMessageController;
 use App\Http\Controllers\Api\V1\SubscriptionRequestsController;
 use App\Http\Controllers\Api\V1\SubscriptionShowController;
 use App\Http\Controllers\Api\V1\TenantShowController;
@@ -70,6 +72,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('devices/{device}/logout', [DevicesController::class, 'logout']);
         Route::post('devices/{device}/test-message', [DevicesController::class, 'testMessage']);
         Route::post('devices/{device}/socket-token', [DevicesController::class, 'socketToken'])->middleware('throttle:20,1');
+        Route::post('devices/{device}/pairing-code', [DevicesController::class, 'pairingCode']);
+        Route::post('devices/{device}/check-number', [DevicesController::class, 'checkNumber']);
 
         Route::get('api-keys', [ApiKeysController::class, 'index']);
         Route::delete('api-keys/{apiKey}', [ApiKeysController::class, 'destroy']);
@@ -83,6 +87,12 @@ Route::prefix('v1')->group(function (): void {
         Route::post('webhooks/{webhook}/rotate-secret', [WebhooksController::class, 'rotateSecret']);
         Route::get('webhooks/{webhook}/deliveries', [WebhooksController::class, 'deliveries']);
     });
+
+    Route::match(['get', 'post'], 'messages/send', [SendQuickMessageController::class, 'send'])
+        ->middleware('throttle:120,1');
+
+    Route::match(['get', 'post'], 'numbers/check', [CheckNumberController::class, 'check'])
+        ->middleware('throttle:120,1');
 
     Route::middleware([AuthenticateApiKey::class])->group(function (): void {
         Route::post('messages/text', [MessagesController::class, 'storeText'])

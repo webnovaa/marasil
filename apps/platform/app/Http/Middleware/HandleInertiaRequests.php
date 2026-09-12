@@ -52,6 +52,21 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' => $user instanceof User
                 ? app(NotificationService::class)->unreadCount($user)
                 : 0,
+            'recentNotifications' => fn () => $user instanceof User
+                ? \App\Domain\Notifications\Models\InAppNotification::query()
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('id')
+                    ->limit(6)
+                    ->get()
+                    ->map(fn ($n) => [
+                        'id' => $n->ulid,
+                        'type' => $n->type,
+                        'title' => $n->title,
+                        'body' => $n->body,
+                        'read_at' => $n->read_at?->toIso8601String(),
+                        'created_at' => $n->created_at?->toIso8601String(),
+                    ])
+                : [],
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->ulid ?? null,

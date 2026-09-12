@@ -22,6 +22,7 @@ final class StoreSubscriptionRequestRequest extends FormRequest
     {
         return [
             'plan_id' => ['required', 'string', 'size:26', 'exists:plans,ulid'],
+            'billing_cycle' => ['sometimes', 'string', 'in:monthly,yearly'],
             'type' => ['sometimes', 'string', Rule::enum(SubscriptionRequestType::class)],
             'payment_method' => ['nullable', 'string', 'max:60'],
             'payment_reference' => ['nullable', 'string', 'max:120'],

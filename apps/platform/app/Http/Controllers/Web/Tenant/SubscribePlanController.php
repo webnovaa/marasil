@@ -50,6 +50,7 @@ final class SubscribePlanController extends Controller
             plan: $plan,
             type: $type,
             payment: [
+                'billing_cycle' => $request->input('billing_cycle', 'monthly'),
                 'payment_method' => $request->input('payment_method'),
                 'payment_reference' => $request->input('payment_reference'),
                 'payment_proof_path' => $proofPath,

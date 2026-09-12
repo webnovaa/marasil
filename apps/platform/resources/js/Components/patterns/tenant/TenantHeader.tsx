@@ -2,6 +2,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import { useEffect } from 'react';
 import { LanguageSwitcher } from '@/Components/patterns/LanguageSwitcher';
+import { NotificationBellDropdown } from '@/Components/patterns/NotificationBellDropdown';
 import { Badge } from '@/Components/ui/Badge';
 import { SidebarTrigger } from '@/Components/ui/Sidebar';
 import type { SharedAuth, SharedSubscription } from '@/Lib/auth';
@@ -52,18 +53,7 @@ export function TenantHeader({ title }: TenantHeaderProps) {
                             طلب معلّق
                         </Badge>
                     ) : null}
-                    <Link
-                        href="/notifications"
-                        className="relative inline-flex size-10 items-center justify-center rounded-[var(--radius-full)] border border-[rgb(var(--border-soft))] bg-[rgb(var(--surface))] text-[rgb(var(--brand-800))] hover:bg-[rgb(var(--surface-soft))]"
-                        aria-label="الإشعارات"
-                    >
-                        <Bell className="size-4" aria-hidden />
-                        {unread > 0 ? (
-                            <span className="absolute end-1 top-1 min-w-4 rounded-full bg-[rgb(var(--danger))] px-1 text-center text-[10px] font-bold text-[rgb(var(--surface))]">
-                                {unread > 9 ? '9+' : unread}
-                            </span>
-                        ) : null}
-                    </Link>
+                    <NotificationBellDropdown />
                     <Link href="/profile" className="tenant-header-chip">
                         <span className="tenant-header-chip__avatar">{initials}</span>
                         <span className="tenant-header-chip__name">{user?.full_name ?? 'مستخدم مراسيل'}</span>

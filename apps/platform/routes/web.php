@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Web\Admin\AdminDashboardPageController;
 use App\Http\Controllers\Web\Admin\AuditPageController;
+use App\Http\Controllers\Web\Admin\BroadcastController;
 use App\Http\Controllers\Web\Admin\HealthPageController;
 use App\Http\Controllers\Web\Admin\PlatformWhatsAppPageController;
 use App\Http\Controllers\Web\Admin\PendingUsersPageController;
@@ -25,8 +26,16 @@ use App\Http\Controllers\Web\Public\HomePageController;
 use App\Http\Controllers\Web\Public\LegalPageController;
 use App\Http\Controllers\Web\Public\PricingPageController;
 use App\Http\Controllers\Web\Public\StatusPageController;
+use App\Http\Controllers\Web\Tenant\AiAssistantController;
+use App\Http\Controllers\Web\Tenant\AnalyticsController;
+use App\Http\Controllers\Web\Tenant\AutoRepliesController;
 use App\Http\Controllers\Web\Tenant\BillingPageController;
 use App\Http\Controllers\Web\Tenant\BillingShowPageController;
+use App\Http\Controllers\Web\Tenant\CampaignsController;
+use App\Http\Controllers\Web\Tenant\ChatController;
+use App\Http\Controllers\Web\Tenant\ContactsController;
+use App\Http\Controllers\Web\Tenant\IntegrationsController;
+use App\Http\Controllers\Web\Tenant\WidgetController;
 use App\Http\Controllers\Web\Tenant\DashboardPageController;
 use App\Http\Controllers\Web\Tenant\DevicesPageController;
 use App\Http\Controllers\Web\Tenant\MessagesPageController;
@@ -34,6 +43,7 @@ use App\Http\Controllers\Web\Tenant\MessagesShowPageController;
 use App\Http\Controllers\Web\Tenant\NotificationsPageController;
 use App\Http\Controllers\Web\Tenant\PlansPageController;
 use App\Http\Controllers\Web\Tenant\ProfilePageController;
+use App\Http\Controllers\Web\Tenant\QuickSendMessageController;
 use App\Http\Controllers\Web\Tenant\SubscribePlanController;
 use App\Http\Controllers\Web\Tenant\SubscriptionPageController;
 use App\Http\Controllers\Web\Tenant\SupportPageController;
@@ -84,7 +94,51 @@ Route::middleware(['auth', 'verified.phone'])->group(function (): void {
             Route::redirect('/api-keys', '/devices');
             Route::get('/webhooks', WebhooksPageController::class)->name('webhooks.index');
             Route::get('/messages', MessagesPageController::class)->name('messages.index');
+            Route::post('/messages/quick', QuickSendMessageController::class)->name('messages.quick');
             Route::get('/messages/{messageUlid}', MessagesShowPageController::class)->name('messages.show');
+
+            // Contacts & Groups
+            Route::get('/contacts', [ContactsController::class, 'index'])->name('contacts.index');
+            Route::post('/contacts', [ContactsController::class, 'store'])->name('contacts.store');
+            Route::post('/contacts/groups', [ContactsController::class, 'storeGroup'])->name('contacts.groups.store');
+            Route::post('/contacts/import', [ContactsController::class, 'import'])->name('contacts.import');
+            Route::delete('/contacts/{contact}', [ContactsController::class, 'destroy'])->name('contacts.destroy');
+
+            // Auto-Replies
+            Route::get('/auto-replies', [AutoRepliesController::class, 'index'])->name('auto-replies.index');
+            Route::post('/auto-replies', [AutoRepliesController::class, 'store'])->name('auto-replies.store');
+            Route::post('/auto-replies/{autoReply}/toggle', [AutoRepliesController::class, 'toggle'])->name('auto-replies.toggle');
+            Route::delete('/auto-replies/{autoReply}', [AutoRepliesController::class, 'destroy'])->name('auto-replies.destroy');
+
+            // Campaigns
+            Route::get('/campaigns', [CampaignsController::class, 'index'])->name('campaigns.index');
+            Route::get('/campaigns/create', [CampaignsController::class, 'create'])->name('campaigns.create');
+            Route::post('/campaigns', [CampaignsController::class, 'store'])->name('campaigns.store');
+            Route::get('/campaigns/{campaign}', [CampaignsController::class, 'show'])->name('campaigns.show');
+            Route::post('/campaigns/{campaign}/pause', [CampaignsController::class, 'pause'])->name('campaigns.pause');
+            Route::post('/campaigns/{campaign}/resume', [CampaignsController::class, 'resume'])->name('campaigns.resume');
+
+            // AI WhatsApp Assistant (Google Gemini)
+            Route::get('/ai-assistant', [AiAssistantController::class, 'index'])->name('ai-assistant.index');
+            Route::post('/ai-assistant', [AiAssistantController::class, 'update'])->name('ai-assistant.update');
+            Route::post('/ai-assistant/test', [AiAssistantController::class, 'test'])->name('ai-assistant.test');
+
+            // WhatsApp Web Live Chat Helpdesk
+            Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+            Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
+            Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
+
+            // E-Commerce Integrations Hub
+            Route::get('/integrations', [IntegrationsController::class, 'index'])->name('integrations.index');
+            Route::post('/integrations/simulate', [IntegrationsController::class, 'simulate'])->name('integrations.simulate');
+
+            // Floating WhatsApp Widget
+            Route::get('/widget', [WidgetController::class, 'index'])->name('widget.index');
+            Route::post('/widget', [WidgetController::class, 'update'])->name('widget.update');
+
+            // Advanced Analytics & 24h Heatmap
+            Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
             Route::get('/usage', UsagePageController::class)->name('usage.index');
             Route::get('/billing', BillingPageController::class)->name('billing.index');
             Route::get('/billing/{invoiceUlid}', BillingShowPageController::class)->name('billing.show');
@@ -124,5 +178,8 @@ Route::middleware(['auth', 'verified.phone'])->group(function (): void {
         Route::get('/audit', AuditPageController::class)->name('audit');
         Route::get('/support', SupportTicketsPageController::class)->name('support');
         Route::get('/support/{ticketUlid}', AdminSupportTicketShowPageController::class)->name('support.show');
+        Route::get('/broadcast', [BroadcastController::class, 'index'])->name('broadcast.index');
+        Route::post('/broadcast', [BroadcastController::class, 'store'])->name('broadcast.store');
+        Route::post('/ai/toggle', [\App\Http\Controllers\Web\Admin\AdminAiController::class, 'toggle'])->name('ai.toggle');
     });
 });

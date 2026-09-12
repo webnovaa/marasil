@@ -11,6 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useI18n } from '@/i18n';
 import TenantShell from '@/Layouts/TenantShell';
 
+import { QuickSendMessageModal } from '@/Components/patterns/tenant/QuickSendMessageModal';
+
+type DeviceOption = {
+    id: string | number;
+    ulid: string;
+    display_name?: string | null;
+    phone_e164?: string | null;
+    status?: string;
+};
+
 type MessageRow = {
     id: string;
     device_id: string | null;
@@ -24,6 +34,7 @@ type MessageRow = {
 
 type Props = {
     messages: MessageRow[];
+    devices?: DeviceOption[];
     filters: { status: string; search: string };
     pagination: { current_page: number; last_page: number; per_page: number; total: number } | null;
 };
@@ -35,7 +46,7 @@ function statusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral
     return 'neutral';
 }
 
-export default function MessagesIndex({ messages, filters, pagination }: Props) {
+export default function MessagesIndex({ messages, devices = [], filters, pagination }: Props) {
     const { t, formatDate } = useI18n();
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState(filters.status || 'all');
@@ -46,7 +57,11 @@ export default function MessagesIndex({ messages, filters, pagination }: Props) 
     };
 
     return (
-        <TenantShell title={t('tenant.messages.title')} description={t('tenant.messages.description')}>
+        <TenantShell
+            title={t('tenant.messages.title')}
+            description={t('tenant.messages.description')}
+            headerActions={<QuickSendMessageModal devices={devices} />}
+        >
             <form onSubmit={onFilter} className="mb-4 flex flex-wrap items-end gap-3">
                 <div className="relative min-w-[180px] flex-1">
                     <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[rgb(var(--muted))]" />

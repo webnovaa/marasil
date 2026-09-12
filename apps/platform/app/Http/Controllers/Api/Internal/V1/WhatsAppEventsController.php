@@ -73,6 +73,7 @@ final class WhatsAppEventsController extends Controller
                     $payload,
                     (string) $validated['event_id'],
                 ),
+                'message.received' => $this->applyInboundMessage($device, $payload),
                 default => null,
             };
 
@@ -175,6 +176,8 @@ final class WhatsAppEventsController extends Controller
             $updates['failed_at'] = now();
             $updates['error_code'] = (string) ($payload['error_code'] ?? 'PROVIDER_TEMPORARILY_UNAVAILABLE');
             $updates['error_message'] = (string) ($payload['error_message'] ?? 'Message failed.');
+
+            $this->alertOwnerOfFailure($message, (string) $updates['error_code'], (string) $updates['error_message']);
         }
 
         $message->update($updates);
@@ -201,5 +204,176 @@ final class WhatsAppEventsController extends Controller
                 'occurred_at' => now()->toIso8601String(),
             ],
         );
+    }
+
+    private function alertOwnerOfFailure(Message $message, string $code, string $reason): void
+    {
+        $tenant = $message->relationLoaded('tenant')
+            ? $message->tenant
+            : \App\Domain\Tenancy\Models\Tenant::query()->with('owner')->find($message->tenant_id);
+
+        if ($tenant === null) {
+            return;
+        }
+
+        $to = (string) $message->recipient_e164;
+        $reasonArabic = match ($code) {
+            'RECIPIENT_NOT_ON_WHATSAPP' => 'الرقم ليس لديه حساب واتساب نشط',
+            'DEVICE_DISCONNECTED' => 'جهاز الإرسال غير متصل بالشبكة',
+            'RATE_LIMIT_EXCEEDED' => 'تم تجاوز حد الإرسال المسموح في باقتك',
+            default => $reason,
+        };
+
+        try {
+            app(\App\Domain\Notifications\Services\TenantOwnerAlertService::class)->alert(
+                tenant: $tenant,
+                type: 'message.failed',
+                title: 'فشل إرسال رسالة واتساب',
+                body: "تعذر تسليم الرسالة للرقم {$to}. السبب: {$reasonArabic}.",
+                data: [
+                    'message_id' => $message->ulid,
+                    'to' => $to,
+                    'error_code' => $code,
+                    'reason' => $reasonArabic,
+                ],
+                dedupeKey: 'message-failed:'.$message->ulid,
+            );
+        } catch (\Throwable) {
+            // Ignore alert dispatch failures
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyInboundMessage(Device $device, array $payload): void
+    {
+        $senderPhone = (string) ($payload['sender_phone'] ?? '');
+        $body = (string) ($payload['text'] ?? '');
+        $providerId = (string) ($payload['provider_message_id'] ?? '');
+        $pushName = (string) ($payload['push_name'] ?? '');
+
+        if ($senderPhone === '') {
+            return;
+        }
+
+        // 1. Store Inbound Message
+        \App\Domain\Messaging\Models\InboundMessage::query()->create([
+            'tenant_id' => $device->tenant_id,
+            'device_id' => $device->id,
+            'sender_phone_e164' => $senderPhone,
+            'provider_message_id' => $providerId ?: null,
+            'body' => $body,
+            'push_name' => $pushName ?: null,
+            'raw_payload' => $payload,
+            'received_at' => isset($payload['timestamp']) ? Carbon::createFromTimestamp((int) $payload['timestamp']) : now(),
+        ]);
+
+        // 2. Dispatch tenant webhook for inbound message
+        $this->dispatchWebhookDelivery->execute(
+            tenantId: (int) $device->tenant_id,
+            eventType: 'message.received',
+            payload: [
+                'event' => 'message.received',
+                'device_id' => $device->ulid,
+                'from' => $senderPhone,
+                'push_name' => $pushName,
+                'body' => $body,
+                'provider_message_id' => $providerId,
+                'received_at' => now()->toIso8601String(),
+            ],
+        );
+
+        // 3. Auto-Reply matching and response dispatch
+        if ($body !== '') {
+            $autoReply = \App\Domain\AutoReplies\Models\AutoReply::query()
+                ->where('tenant_id', $device->tenant_id)
+                ->where('is_active', true)
+                ->where(function ($q) use ($device) {
+                    $q->whereNull('device_id')->orWhere('device_id', $device->id);
+                })
+                ->get()
+                ->first(fn ($rule) => $rule->matches($body));
+
+            if ($autoReply !== null) {
+                $autoReply->increment('reply_count');
+                $replyText = \App\Support\Spintax::process($autoReply->reply_text);
+
+                try {
+                    $tenant = $device->tenant ?? \App\Domain\Tenancy\Models\Tenant::find($device->tenant_id);
+                    if ($tenant !== null) {
+                        app(\App\Domain\Messaging\Actions\AcceptTextMessage::class)->handle(
+                            tenant: $tenant,
+                            data: [
+                                'device_id' => $device->ulid,
+                                'to' => $senderPhone,
+                                'message' => $replyText,
+                                'category' => 'customer_support',
+                            ],
+                        );
+                    }
+                } catch (\Throwable) {
+                    // Fail silently to avoid breaking the webhook
+                }
+            } else {
+                // 4. Gemini AI Assistant response if enabled
+                $this->dispatchGeminiAiReply($device, $senderPhone, $body);
+            }
+        }
+    }
+
+    private function dispatchGeminiAiReply(Device $device, string $senderPhone, string $incomingText): void
+    {
+        try {
+            // 1. Check Platform Master Switch
+            if (! \Illuminate\Support\Facades\Cache::get('platform.ai_master_enabled', true)) {
+                return;
+            }
+
+            // 2. Check Subscription Plan Feature (exclusive to top tier)
+            $tenant = $device->tenant ?? \App\Domain\Tenancy\Models\Tenant::find($device->tenant_id);
+            if ($tenant === null || ! app(\App\Domain\Subscriptions\Services\SubscriptionGate::class)->hasFeature($tenant, 'ai_assistant')) {
+                return;
+            }
+
+            $aiSetting = \App\Domain\Ai\Models\TenantAiSetting::query()
+                ->where('tenant_id', $device->tenant_id)
+                ->where('is_enabled', true)
+                ->first();
+
+            if ($aiSetting === null || empty($aiSetting->gemini_api_key)) {
+                return;
+            }
+
+            // Fetch recent messages for conversational context
+            $recentInbound = \App\Domain\Messaging\Models\InboundMessage::query()
+                ->where('tenant_id', $device->tenant_id)
+                ->where('sender_phone_e164', $senderPhone)
+                ->latest('id')
+                ->take(3)
+                ->get()
+                ->map(fn ($m) => ['role' => 'user', 'content' => $m->body]);
+
+            $geminiService = app(\App\Domain\Ai\Services\GeminiService::class);
+            $reply = $geminiService->generateReply($aiSetting, $incomingText, $recentInbound->reverse()->values()->all());
+
+            if (! empty($reply)) {
+                $aiSetting->increment('total_ai_replies');
+                $tenant = $device->tenant ?? \App\Domain\Tenancy\Models\Tenant::find($device->tenant_id);
+                if ($tenant !== null) {
+                    app(\App\Domain\Messaging\Actions\AcceptTextMessage::class)->handle(
+                        tenant: $tenant,
+                        data: [
+                            'device_id' => $device->ulid,
+                            'to' => $senderPhone,
+                            'message' => $reply,
+                            'category' => 'customer_support',
+                        ],
+                    );
+                }
+            }
+        } catch (\Throwable) {
+            // Fail silently to keep webhook resilient
+        }
     }
 }

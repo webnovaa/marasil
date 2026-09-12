@@ -17,6 +17,7 @@ use App\Domain\Subscriptions\Services\EntitlementService;
 use App\Domain\Subscriptions\Services\SubscriptionGate;
 use App\Domain\Tenancy\Models\Tenant;
 use App\Support\ApiResponse;
+use App\Support\Spintax;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
@@ -84,7 +85,7 @@ final class AcceptTextMessage
                         'idempotency_key' => $idempotencyKey ?: null,
                         'recipient_e164' => $data['to'],
                         'type' => MessageType::Text,
-                        'content_encrypted' => $data['message'],
+                        'content_encrypted' => Spintax::process($data['message']),
                         'status' => MessageStatus::Queued,
                         'queued_at' => now(),
                         'request_id' => 'req_'.Str::lower((string) Str::ulid()),

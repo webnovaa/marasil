@@ -47,9 +47,27 @@ final class WhatsAppServiceClient
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
+    public function requestPairingCode(string $deviceUlid, array $payload): array
+    {
+        return $this->request('POST', '/internal/v1/devices/'.$deviceUlid.'/pairing-code', $payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public function sendMessage(array $payload): array
     {
         return $this->request('POST', '/internal/v1/messages/send', $payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function sendMedia(array $payload): array
+    {
+        return $this->request('POST', '/internal/v1/messages/send-media', $payload);
     }
 
     /**
@@ -70,6 +88,15 @@ final class WhatsAppServiceClient
     public function deleteSession(string $deviceUlid): array
     {
         return $this->request('DELETE', '/internal/v1/devices/'.$deviceUlid.'/session');
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function checkNumber(string $deviceUlid, array $payload): array
+    {
+        return $this->request('POST', '/internal/v1/devices/'.$deviceUlid.'/check-number', $payload);
     }
 
     /**

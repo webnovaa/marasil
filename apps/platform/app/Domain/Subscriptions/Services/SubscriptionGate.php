@@ -102,4 +102,18 @@ final class SubscriptionGate
             ->orderByDesc('starts_at')
             ->first();
     }
+
+    public function hasFeature(?Tenant $tenant, string $feature, ?CarbonInterface $at = null): bool
+    {
+        if ($tenant === null) {
+            return false;
+        }
+
+        $subscription = $this->currentSubscription($tenant, $at);
+        if (! $this->isUsable($subscription, $at)) {
+            return false;
+        }
+
+        return in_array($feature, $subscription->features ?? [], true);
+    }
 }

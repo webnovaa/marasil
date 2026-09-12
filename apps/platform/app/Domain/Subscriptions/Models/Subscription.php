@@ -88,4 +88,9 @@ class Subscription extends Model
     {
         return $this->hasMany(SubscriptionEvent::class);
     }
+
+    public function hasFeature(string $feature): bool
+    {
+        return in_array($feature, $this->features ?? [], true);
+    }
 }

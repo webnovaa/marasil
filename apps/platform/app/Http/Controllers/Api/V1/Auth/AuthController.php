@@ -95,7 +95,11 @@ final class AuthController extends Controller
             );
         }
 
+        $token = $result['user']->createToken($request->input('device_name', 'mobile_app'))->plainTextToken;
+
         return ApiResponse::success([
+            'token' => $token,
+            'token_type' => 'Bearer',
             'user' => UserResource::make($result['user']),
             'auth_session_id' => $result['auth_session']->ulid,
             'redirect_to' => $result['user']->homeDashboardPath(),
