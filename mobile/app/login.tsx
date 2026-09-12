@@ -16,6 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
@@ -71,10 +72,11 @@ export default function LoginScreen() {
         >
           {/* Brand Header */}
           <View style={styles.header}>
-            <View style={[styles.logoBadge, { backgroundColor: theme.primaryLight }]}>
-              <MaterialCommunityIcons name="whatsapp" size={44} color={theme.primary} />
-            </View>
-            <Text style={[styles.brandTitle, { color: theme.text }]}>{Brand.name}</Text>
+            <BrandLogo
+              width={180}
+              tone={colorScheme === 'dark' ? 'white' : 'color'}
+              style={{ marginBottom: 12 }}
+            />
             <Text style={[styles.brandSubtitle, { color: theme.primary }]}>
               WhatsApp API SaaS
             </Text>

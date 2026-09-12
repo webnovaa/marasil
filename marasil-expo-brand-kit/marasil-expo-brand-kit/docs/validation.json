@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-12",
+  "assets": 22,
+  "checks": [
+    "22 PNG dimensions and alpha metadata verified",
+    "Main icons RGB with no alpha",
+    "Adaptive foreground and monochrome opaque content inside conservative 66/108 diameter safe circle",
+    "Notification nontransparent pixels are RGB 255/255/255",
+    "Guide relative links resolve",
+    "Config preserves identifiers and unrelated plugins; repeated application stable; paths exist"
+  ],
+  "limits": [
+    "No Expo app source supplied: no native app build or device test",
+    "HTML generated; browser screenshot unavailable in this environment",
+    "Original source is 424x277; larger outputs are resampled raster"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "build": {
+    "brand-preview": {
+      "distribution": "internal",
+      "android": {"buildType": "apk"}
+    }
+  }
+}

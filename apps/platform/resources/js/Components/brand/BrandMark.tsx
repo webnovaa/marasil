@@ -36,9 +36,9 @@ export function BrandMark({
             aria-hidden
         >
             <img
-                src={brand.logoSrc}
+                src={tone === 'inverse' ? brand.logoWhiteSrc : brand.logoSrc}
                 alt=""
-                className="size-full object-cover"
+                className="size-full object-contain p-1"
                 width={64}
                 height={64}
                 decoding="async"
