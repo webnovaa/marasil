@@ -9,7 +9,9 @@ import {
     MessageCircle,
     Package,
     ScrollText,
+    Settings,
     Users,
+    Wallet,
 } from 'lucide-react';
 import { t, type Locale } from '@/i18n';
 
@@ -37,6 +39,7 @@ export function getAdminNavGroups(locale: Locale): AdminNavGroup[] {
                 { id: 'dashboard', titleKey: 'nav.admin.dashboard', href: '/admin', icon: LayoutDashboard },
                 { id: 'health', titleKey: 'nav.admin.health', href: '/admin/health', icon: Activity },
                 { id: 'platform-whatsapp', titleKey: 'nav.admin.platformWhatsapp', href: '/admin/platform-whatsapp', icon: MessageCircle },
+                { id: 'settings', titleKey: 'nav.admin.settings', href: '/admin/settings', icon: Settings },
             ],
         },
         {
@@ -55,6 +58,7 @@ export function getAdminNavGroups(locale: Locale): AdminNavGroup[] {
                 { id: 'subscription-requests', titleKey: 'nav.admin.subscriptionRequests', href: '/admin/subscription-requests', icon: CreditCard },
                 { id: 'subscriptions', titleKey: 'nav.admin.subscriptions', href: '/admin/subscriptions', icon: CreditCard },
                 { id: 'plans', titleKey: 'nav.admin.plans', href: '/admin/plans', icon: Package },
+                { id: 'payment-methods', titleKey: 'nav.admin.paymentMethods', href: '/admin/payment-methods', icon: Wallet },
             ],
         },
         {

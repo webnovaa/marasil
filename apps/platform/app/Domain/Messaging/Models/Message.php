@@ -88,4 +88,12 @@ class Message extends Model
     {
         return $this->hasMany(MessageStatusEvent::class);
     }
+
+    /**
+     * Plaintext body for inbox/chat UIs (stored encrypted as content_encrypted).
+     */
+    public function getBodyAttribute(): ?string
+    {
+        return $this->content_encrypted;
+    }
 }

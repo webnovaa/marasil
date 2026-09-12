@@ -18,7 +18,7 @@ final class WidgetController extends Controller
     public function index(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $devices = Device::query()
             ->where('tenant_id', $tenant->id)
@@ -54,7 +54,7 @@ final class WidgetController extends Controller
     public function update(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $validated = $request->validate([
             'phone_number' => ['required', 'string', 'max:32'],

@@ -48,6 +48,6 @@ final class ProcessOutboxMessage implements ShouldQueue
             'published_at' => now(),
         ]);
 
-        SendWhatsAppMessage::dispatchSync($messageUlid);
+        SendWhatsAppMessage::dispatch($messageUlid);
     }
 }

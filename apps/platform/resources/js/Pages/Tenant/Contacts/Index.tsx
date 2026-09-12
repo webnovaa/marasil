@@ -125,9 +125,9 @@ export default function ContactsIndex({ contacts, groups, filters, pagination }:
         });
     }
 
-    function handleDeleteContact(contactId: number) {
+    function handleDeleteContact(contactUlid: string) {
         if (confirm('هل أنت متأكد من رغبتك في حذف جهة الاتصال هذه؟')) {
-            router.delete(`/contacts/${contactId}`);
+            router.delete(`/contacts/${contactUlid}`);
         }
     }
 
@@ -231,7 +231,7 @@ export default function ContactsIndex({ contacts, groups, filters, pagination }:
                             </thead>
                             <tbody className="divide-y divide-[rgb(var(--border))]">
                                 {contacts.map((c) => (
-                                    <tr key={c.id} className="hover:bg-[rgb(var(--muted))]/5 transition-colors">
+                                    <tr key={c.ulid} className="hover:bg-[rgb(var(--muted))]/5 transition-colors">
                                         <td className="px-4 py-3.5 font-medium">
                                             {c.name}
                                             {c.notes && <p className="text-xs text-[rgb(var(--muted))] line-clamp-1">{c.notes}</p>}
@@ -268,7 +268,7 @@ export default function ContactsIndex({ contacts, groups, filters, pagination }:
                                         <td className="px-4 py-3.5 text-end">
                                             <button
                                                 type="button"
-                                                onClick={() => handleDeleteContact(c.id)}
+                                                onClick={() => handleDeleteContact(c.ulid)}
                                                 className="p-1.5 text-[rgb(var(--muted))] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                                                 title="حذف"
                                             >

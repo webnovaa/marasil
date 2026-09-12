@@ -6,13 +6,13 @@ namespace App\Http\Controllers\Web\Tenant;
 
 use App\Domain\Ai\Models\TenantAiSetting;
 use App\Domain\Ai\Services\GeminiService;
+use App\Domain\Platform\Models\PlatformSetting;
 use App\Domain\Subscriptions\Services\SubscriptionGate;
 use App\Domain\Tenancy\Models\Tenant;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,10 +21,10 @@ final class AiAssistantController extends Controller
     public function index(Request $request, SubscriptionGate $subscriptionGate): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $hasPlanAccess = $subscriptionGate->hasFeature($tenant, 'ai_assistant');
-        $isMasterEnabled = (bool) Cache::get('platform.ai_master_enabled', true);
+        $isMasterEnabled = PlatformSetting::isAiMasterEnabled();
         $currentSubscription = $subscriptionGate->currentSubscription($tenant);
 
         $setting = TenantAiSetting::query()->firstOrCreate(
@@ -122,7 +122,7 @@ final class AiAssistantController extends Controller
     public function update(Request $request, SubscriptionGate $subscriptionGate): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         if (! $subscriptionGate->hasFeature($tenant, 'ai_assistant')) {
             return back()->with('error', 'ميزة المساعد الذكي Google Gemini متاحة حصرياً في الخطة الاحترافية (Professional). يرجى ترقية خطتك للوصول.');
@@ -172,7 +172,7 @@ final class AiAssistantController extends Controller
     public function test(Request $request, GeminiService $geminiService, SubscriptionGate $subscriptionGate): JsonResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         if (! $subscriptionGate->hasFeature($tenant, 'ai_assistant')) {
             return response()->json([
@@ -181,7 +181,7 @@ final class AiAssistantController extends Controller
             ], 403);
         }
 
-        if (! Cache::get('platform.ai_master_enabled', true)) {
+        if (! PlatformSetting::isAiMasterEnabled()) {
             return response()->json([
                 'reply' => '⚠️ خدمة الذكاء الاصطناعي متوقفة مؤقتاً للصيانة على مستوى المنصة.',
                 'status' => 'master_disabled',

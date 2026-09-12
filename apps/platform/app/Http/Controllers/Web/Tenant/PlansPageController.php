@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Tenant;
 
+use App\Domain\Billing\Models\PaymentMethod;
 use App\Domain\Identity\Models\User;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Subscriptions\Enums\SubscriptionRequestStatus;
@@ -34,9 +35,18 @@ final class PlansPageController extends Controller
                 ->where('status', SubscriptionRequestStatus::Pending)
                 ->exists();
 
+        $paymentMethods = PaymentMethod::query()
+            ->where('is_enabled', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (PaymentMethod $method): array => $method->toPublicArray())
+            ->values();
+
         return Inertia::render('Tenant/Plans/Index', [
             'plans' => $plans,
             'has_pending_request' => $hasPendingRequest,
+            'payment_methods' => $paymentMethods,
         ]);
     }
 }

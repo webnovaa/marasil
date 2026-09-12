@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Domain\Subscriptions\Actions;
 
 use App\Domain\Audit\Models\AuditLog;
+use App\Domain\Billing\Enums\PaymentStatus;
+use App\Domain\Billing\Models\Invoice;
+use App\Domain\Billing\Models\InvoiceItem;
+use App\Domain\Billing\Models\Payment;
 use App\Domain\Identity\Models\User;
 use App\Domain\Subscriptions\Enums\SubscriptionRequestStatus;
 use App\Domain\Subscriptions\Enums\SubscriptionStatus;
@@ -143,6 +147,44 @@ final class AdminApproveSubscriptionRequest
                 'user_agent' => $userAgent,
                 'request_id' => $requestId,
             ]);
+
+            Payment::query()
+                ->where('subscription_request_id', $request->id)
+                ->where('status', PaymentStatus::Pending)
+                ->each(function (Payment $payment) use ($request): void {
+                    $payment->forceFill([
+                        'status' => PaymentStatus::Paid,
+                        'paid_at' => now(),
+                    ])->save();
+                });
+
+            $amountMinor = (int) ($request->amount_minor ?? $plan->price_minor ?? 0);
+            if ($amountMinor > 0) {
+                $invoiceNumber = 'INV-'.strtoupper(substr((string) $subscription->ulid, -10));
+                $invoice = Invoice::query()->create([
+                    'tenant_id' => $request->tenant_id,
+                    'subscription_id' => $subscription->id,
+                    'number' => $invoiceNumber,
+                    'status' => 'paid',
+                    'amount_minor' => $amountMinor,
+                    'currency' => $plan->currency ?? 'USD',
+                    'payment_method' => $request->payment_method,
+                    'payment_reference' => $request->payment_reference,
+                    'issued_at' => now(),
+                    'paid_at' => now(),
+                ]);
+
+                InvoiceItem::query()->create([
+                    'invoice_id' => $invoice->id,
+                    'description' => sprintf(
+                        'اشتراك %s (%s)',
+                        $plan->name,
+                        $request->billing_cycle === 'yearly' ? 'سنوي' : 'شهري',
+                    ),
+                    'amount_minor' => $amountMinor,
+                    'quantity' => 1,
+                ]);
+            }
 
             return $subscription->load(['plan', 'tenant']);
         });

@@ -87,6 +87,14 @@ export default function DevicesIndex() {
                 setError(res.success ? 'فشل إنشاء الجهاز' : (res.error?.message ?? 'فشل إنشاء الجهاز'));
                 return;
             }
+            const plainKey = res.data.integration?.api_key;
+            if (plainKey) {
+                try {
+                    sessionStorage.setItem(`device-api-key:${res.data.device.id}`, plainKey);
+                } catch {
+                    // ignore storage failures — rotate remains available on device page
+                }
+            }
             router.visit(`/devices/${res.data.device.id}`);
         } catch (err: unknown) {
             setError(apiErrorMessage(err, 'فشل إنشاء الجهاز'));

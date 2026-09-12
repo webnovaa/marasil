@@ -18,7 +18,7 @@ final class ContactsController extends Controller
     public function index(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $search = (string) $request->query('search', '');
         $groupId = $request->query('group_id');
@@ -61,7 +61,7 @@ final class ContactsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:128'],
@@ -87,7 +87,7 @@ final class ContactsController extends Controller
     public function storeGroup(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -108,7 +108,7 @@ final class ContactsController extends Controller
     public function import(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt'],

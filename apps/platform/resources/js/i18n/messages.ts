@@ -104,6 +104,8 @@ const ar: MessageTree = {
             audit: 'سجل التدقيق',
             broadcast: 'بث الإشعارات',
             platformWhatsapp: 'حساب واتساب الرسمي',
+            settings: 'إعدادات المنصة',
+            paymentMethods: 'طرق الدفع',
         },
     },
     subscriptionGate: {
@@ -552,6 +554,8 @@ const en: MessageTree = {
             audit: 'Audit Log',
             broadcast: 'Broadcast',
             platformWhatsapp: 'Official WhatsApp',
+            settings: 'Platform settings',
+            paymentMethods: 'Payment methods',
         },
     },
     subscriptionGate: {

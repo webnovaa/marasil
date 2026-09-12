@@ -62,22 +62,20 @@ class ApiService {
 
   async init(): Promise<{ token: string | null; apiUrl: string; user: UserProfile | null }> {
     try {
-      const [storedToken, storedUrl, storedUser] = await Promise.all([
+      this.apiUrl = Brand.defaultApiUrl;
+      await AsyncStorage.setItem(STORAGE_KEYS.API_URL, this.apiUrl);
+
+      const [storedToken, storedUser] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.TOKEN),
-        AsyncStorage.getItem(STORAGE_KEYS.API_URL),
         AsyncStorage.getItem(STORAGE_KEYS.USER),
       ]);
 
       if (storedToken) this.token = storedToken;
-      if (storedUrl && storedUrl !== 'http://10.0.2.2:8000' && storedUrl !== 'http://localhost:8000') {
-        this.apiUrl = storedUrl;
-      } else {
-        this.apiUrl = Brand.defaultApiUrl;
-      }
 
       const user = storedUser ? (JSON.parse(storedUser) as UserProfile) : null;
       return { token: this.token, apiUrl: this.apiUrl, user };
     } catch {
+      this.apiUrl = Brand.defaultApiUrl;
       return { token: null, apiUrl: this.apiUrl, user: null };
     }
   }
@@ -159,7 +157,7 @@ class ApiService {
       return {
         success: false,
         error: message,
-        message: 'تعذر الاتصال بخادم المنصة. تحقق من عنوان السيرفر والإنترنت.',
+        message: 'تعذر الاتصال بخادم المنصة. تحقق من اتصال الإنترنت.',
       };
     }
   }
@@ -168,11 +166,8 @@ class ApiService {
   async login(
     phoneE164: string,
     password: string,
-    customUrl?: string
   ): Promise<{ success: boolean; user?: UserProfile; token?: string; error?: string }> {
-    if (customUrl) {
-      await this.setApiUrl(customUrl);
-    }
+    this.apiUrl = Brand.defaultApiUrl;
 
     const res = await this.request<{
       token: string;

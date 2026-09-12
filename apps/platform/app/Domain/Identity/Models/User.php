@@ -11,6 +11,7 @@ use App\Domain\Tenancy\Models\TenantMember;
 use App\Support\Auth\HomeDashboard;
 use App\Support\Concerns\HasUlid;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -196,5 +197,21 @@ class User extends Authenticatable
                 ->with('tenant')
                 ->first()
                 ?->tenant;
+    }
+
+    public function requirePrimaryTenant(): Tenant
+    {
+        $tenant = $this->primaryTenant();
+        abort_if($tenant === null, 403, 'No tenant available.');
+
+        return $tenant;
+    }
+
+    /**
+     * Controllers historically used $user->tenant; map it to the primary tenant.
+     */
+    protected function tenant(): Attribute
+    {
+        return Attribute::get(fn (): ?Tenant => $this->primaryTenant());
     }
 }

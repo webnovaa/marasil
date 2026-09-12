@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -21,13 +22,11 @@ import { BrandLogo } from '@/components/BrandLogo';
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'dark'];
-  const { login, apiUrl, isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [serverUrl, setServerUrl] = useState(apiUrl);
-  const [showServerConfig, setShowServerConfig] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -47,7 +46,7 @@ export default function LoginScreen() {
     setErrorMessage(null);
 
     try {
-      const res = await login(phone.trim(), password, serverUrl.trim());
+      const res = await login(phone.trim(), password);
       if (res.success) {
         router.replace('/(tabs)');
       } else {
@@ -57,6 +56,15 @@ export default function LoginScreen() {
       setErrorMessage('حدث خطأ غير متوقع أثناء تسجيل الدخول.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openRegister() {
+    const url = `${Brand.defaultApiUrl}/register`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      setErrorMessage('تعذر فتح صفحة إنشاء الحساب على المنصة.');
     }
   }
 
@@ -70,7 +78,6 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Brand Header */}
           <View style={styles.header}>
             <BrandLogo
               width={180}
@@ -85,7 +92,6 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Form Card */}
           <View
             style={[
               styles.card,
@@ -102,7 +108,6 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {/* Phone Input */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.text }]}>رقم الهاتف المسجل</Text>
               <View
@@ -130,7 +135,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Password Input */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.text }]}>كلمة المرور</Text>
               <View
@@ -168,47 +172,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Server URL Config Accordion */}
-            <TouchableOpacity
-              onPress={() => setShowServerConfig(!showServerConfig)}
-              style={styles.serverToggle}
-            >
-              <Text style={[styles.serverToggleText, { color: theme.textMuted }]}>
-                {showServerConfig ? 'إخفاء إعدادات السيرفر' : 'إعدادات عنوان السيرفر (API Host)'}
-              </Text>
-              <MaterialCommunityIcons
-                name={showServerConfig ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={theme.textMuted}
-              />
-            </TouchableOpacity>
-
-            {showServerConfig ? (
-              <View style={styles.serverConfigBox}>
-                <Text style={[styles.serverHint, { color: theme.textSubtle }]}>
-                  عنوان خادم المنصة (مثال: https://marasil.cloud أو دومين سيرفرك)
-                </Text>
-                <TextInput
-                  value={serverUrl}
-                  onChangeText={setServerUrl}
-                  placeholder="https://marasil.cloud"
-                  placeholderTextColor={theme.textSubtle}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={[
-                    styles.serverInput,
-                    {
-                      backgroundColor: theme.surfaceSoft,
-                      borderColor: theme.border,
-                      color: theme.text,
-                    },
-                  ]}
-                  textAlign="left"
-                />
-              </View>
-            ) : null}
-
-            {/* Submit Button */}
             <TouchableOpacity
               onPress={() => void handleLogin()}
               disabled={loading}
@@ -226,6 +189,13 @@ export default function LoginScreen() {
                   <MaterialCommunityIcons name="arrow-left" size={20} color="#ffffff" />
                 </View>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => void openRegister()} style={styles.registerBtn}>
+              <Text style={[styles.registerText, { color: theme.textMuted }]}>
+                ليس لديك حساب؟
+              </Text>
+              <Text style={[styles.registerLink, { color: theme.primary }]}>إنشاء حساب على المنصة</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -249,22 +219,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 28,
-  },
-  logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  brandTitle: {
-    fontSize: 28,
-    fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 0.5,
   },
   brandSubtitle: {
     fontSize: 14,
@@ -329,34 +283,6 @@ const styles = StyleSheet.create({
   eyeBtn: {
     padding: 6,
   },
-  serverToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  serverToggleText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  serverConfigBox: {
-    marginBottom: 16,
-  },
-  serverHint: {
-    fontSize: 11,
-    marginBottom: 6,
-    textAlign: 'right',
-  },
-  serverInput: {
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    fontSize: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
   submitBtn: {
     height: 50,
     borderRadius: 14,
@@ -380,6 +306,19 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#ffffff',
     fontSize: 15,
+    fontWeight: '800',
+  },
+  registerBtn: {
+    marginTop: 18,
+    alignItems: 'center',
+    gap: 4,
+  },
+  registerText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  registerLink: {
+    fontSize: 14,
     fontWeight: '800',
   },
 });

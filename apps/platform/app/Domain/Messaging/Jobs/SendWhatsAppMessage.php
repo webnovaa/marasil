@@ -6,6 +6,7 @@ namespace App\Domain\Messaging\Jobs;
 
 use App\Domain\Devices\Services\WhatsAppServiceClient;
 use App\Domain\Messaging\Enums\MessageStatus;
+use App\Domain\Messaging\Enums\MessageType;
 use App\Domain\Messaging\Models\Message;
 use App\Domain\Messaging\Models\MessageAttempt;
 use App\Domain\Messaging\Models\MessageStatusEvent;

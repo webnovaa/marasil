@@ -141,6 +141,8 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
     } | null>(null);
     const [checkError, setCheckError] = useState<string | null>(null);
     const [checkCodeTab, setCheckCodeTab] = useState<'webhook' | 'curl' | 'php' | 'js' | 'python'>('webhook');
+    const [revealedApiKey, setRevealedApiKey] = useState<string | null>(null);
+    const [confirmRotateKey, setConfirmRotateKey] = useState(false);
 
     const load = useCallback(async () => {
         try {
@@ -148,7 +150,23 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
             if (res.success && res.data) {
                 setDevice(res.data.device);
                 setEditName(res.data.device.name);
-                setIntegration(res.data.integration);
+                let nextIntegration = res.data.integration;
+                let fromCreate: string | null = null;
+                try {
+                    fromCreate = sessionStorage.getItem(`device-api-key:${deviceUlid}`);
+                    if (fromCreate) {
+                        sessionStorage.removeItem(`device-api-key:${deviceUlid}`);
+                    }
+                } catch {
+                    fromCreate = null;
+                }
+                if (fromCreate) {
+                    nextIntegration = { ...nextIntegration, api_key: fromCreate, has_api_key: true };
+                    setRevealedApiKey(fromCreate);
+                } else if (res.data.integration.api_key) {
+                    setRevealedApiKey(res.data.integration.api_key);
+                }
+                setIntegration(nextIntegration);
             }
         } catch {
             setError('تعذر جلب بيانات الجهاز.');
@@ -329,6 +347,27 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
             await navigator.clipboard.writeText(value);
         } catch {
             // ignore
+        }
+    }
+
+    async function rotateApiKey() {
+        setBusy(true);
+        setError(null);
+        try {
+            const res = await apiPost<{ integration: Integration }>(`/devices/${deviceUlid}/rotate-api-key`, {});
+            if (!res.success || !res.data?.integration) {
+                setError(res.success ? 'تعذر تجديد مفتاح الإرسال.' : (res.error?.message ?? 'تعذر تجديد مفتاح الإرسال.'));
+                return;
+            }
+            setIntegration(res.data.integration);
+            if (res.data.integration.api_key) {
+                setRevealedApiKey(res.data.integration.api_key);
+            }
+        } catch {
+            setError('تعذر تجديد مفتاح الإرسال.');
+        } finally {
+            setBusy(false);
+            setConfirmRotateKey(false);
         }
     }
 
@@ -792,16 +831,73 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
                 <div>
                     <TenantPanel
                         title="بيانات ربط الجهاز والإرسال"
-                        description="لربط جهازك مع متجرك أو موقعك أو أي نظام خارجي، استخدم البيانات التالية فقط: رابط الإرسال، اسم الجهاز، واسم المستخدم."
+                        description="انسخ مفتاح الإرسال (مرة واحدة عند الإنشاء أو التجديد) مع روابط الإرسال وفحص الأرقام. المفتاح يظهر للعرض مرة واحدة فقط."
                     >
                         {integration ? (() => {
                             const sendUrl = integration.send_url || (typeof window !== 'undefined' ? `${window.location.origin}/api/v1/messages/send` : '/api/v1/messages/send');
                             const checkUrl = integration.check_url || (typeof window !== 'undefined' ? `${window.location.origin}/api/v1/numbers/check` : '/api/v1/numbers/check');
                             const deviceName = device?.name || integration.device_name;
                             const username = integration.username;
+                            const apiKeyValue = revealedApiKey ?? integration.api_key ?? null;
+                            const maskedKey = `${integration.api_key_prefix ?? 'mrs_live_'}••••••••`;
 
                             return (
                                 <div className="space-y-6">
+                                    <div className="rounded-[var(--radius-lg)] border border-[rgb(var(--border-subtle))] bg-[rgb(var(--surface-soft))] p-4 space-y-3">
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <p className="text-sm font-semibold text-[rgb(var(--brand-950))]">مفتاح الإرسال (API Key)</p>
+                                                <p className="mt-0.5 text-xs text-[rgb(var(--muted))]" dir="ltr">
+                                                    Authorization: Bearer {'{api_key}'}
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                disabled={busy}
+                                                onClick={() => setConfirmRotateKey(true)}
+                                            >
+                                                <RefreshCw className="size-4" />
+                                                تجديد المفتاح
+                                            </Button>
+                                        </div>
+                                        {apiKeyValue ? (
+                                            <Alert tone="warning" title="انسخ المفتاح الآن">
+                                                يظهر مرة واحدة فقط عند الإنشاء أو التجديد. خزّنه في خادم مشروعك فوراً.
+                                            </Alert>
+                                        ) : integration.has_api_key ? (
+                                            <Alert tone="neutral" title="المفتاح محمي">
+                                                المفتاح موجود لكنه مخفي للأمان. اضغط «تجديد المفتاح» إذا فقدته — المفتاح القديم يُلغى فوراً.
+                                            </Alert>
+                                        ) : (
+                                            <Alert tone="info" title="لا يوجد مفتاح بعد">
+                                                أنشئ جهازاً جديداً أو اضغط تجديد المفتاح لإصدار مفتاح إرسال.
+                                            </Alert>
+                                        )}
+                                        <div className="flex gap-1.5">
+                                            <Input
+                                                id="integration-api-key"
+                                                dir="ltr"
+                                                readOnly
+                                                value={apiKeyValue ?? maskedKey}
+                                                className="font-mono text-xs select-all bg-white"
+                                            />
+                                            {apiKeyValue ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => void copyField('api_key', apiKeyValue)}
+                                                    title="نسخ المفتاح"
+                                                    className="shrink-0"
+                                                >
+                                                    {copiedField === 'api_key' ? <Check className="size-4" /> : <Copy className="size-4" />}
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
                                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                         <div className="rounded-[var(--radius-lg)] border border-[rgb(var(--border-subtle))] bg-[rgb(var(--surface-soft))] p-4 space-y-2">
                                             <div className="flex items-center justify-between">
@@ -1502,6 +1598,17 @@ export default function DeviceShow({ deviceUlid, engine, pairingAvailable }: Pro
             </div>
 
             {/* Confirmation Dialogs */}
+            <ConfirmDialog
+                open={confirmRotateKey}
+                onOpenChange={(v) => !v && setConfirmRotateKey(false)}
+                title="تجديد مفتاح الإرسال"
+                description="سيُلغى المفتاح الحالي فوراً ويُعرض مفتاح جديد مرة واحدة فقط. حدّث إعدادات مشروعك قبل المتابعة."
+                confirmLabel="تجديد المفتاح"
+                tone="danger"
+                loading={busy}
+                onConfirm={() => void rotateApiKey()}
+            />
+
             <ConfirmDialog
                 open={confirmAction === 'delete'}
                 onOpenChange={(v) => !v && setConfirmAction(null)}

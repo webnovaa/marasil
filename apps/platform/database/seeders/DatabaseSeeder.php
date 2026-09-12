@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             PlatformSystemSeeder::class,
             PlansSeeder::class,
+            PlatformSettingsAndPaymentMethodsSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

@@ -27,7 +27,7 @@ final class CampaignsController extends Controller
     public function index(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $campaigns = Campaign::query()
             ->where('tenant_id', $tenant->id)
@@ -49,7 +49,7 @@ final class CampaignsController extends Controller
     public function create(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $devices = Device::query()
             ->where('tenant_id', $tenant->id)
@@ -71,7 +71,7 @@ final class CampaignsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         if (! $this->subscriptionGate->canSend($tenant)) {
             return back()->with('error', 'يلزم اشتراك نشط لإطلاق الحملات.');

@@ -69,13 +69,13 @@ export default function AutoRepliesIndex({ autoReplies, devices }: Props) {
         });
     }
 
-    function handleToggle(id: number) {
-        router.post(`/auto-replies/${id}/toggle`);
+    function handleToggle(ulid: string) {
+        router.post(`/auto-replies/${ulid}/toggle`);
     }
 
-    function handleDelete(id: number) {
+    function handleDelete(ulid: string) {
         if (confirm('هل أنت متأكد من حذف قاعدة الرد التلقائي هذه؟')) {
-            router.delete(`/auto-replies/${id}`);
+            router.delete(`/auto-replies/${ulid}`);
         }
     }
 
@@ -110,7 +110,7 @@ export default function AutoRepliesIndex({ autoReplies, devices }: Props) {
                 ) : (
                     <div className="divide-y divide-[rgb(var(--border))]">
                         {autoReplies.map((rule) => (
-                            <div key={rule.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[rgb(var(--muted))]/5 transition-colors">
+                            <div key={rule.ulid} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[rgb(var(--muted))]/5 transition-colors">
                                 <div className="space-y-1.5 min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <p className="font-bold text-base text-[rgb(var(--foreground))]">{rule.name}</p>
@@ -145,7 +145,7 @@ export default function AutoRepliesIndex({ autoReplies, devices }: Props) {
                                     <Button
                                         size="sm"
                                         variant={rule.is_active ? 'secondary' : 'primary'}
-                                        onClick={() => handleToggle(rule.id)}
+                                        onClick={() => handleToggle(rule.ulid)}
                                         className={`gap-1.5 text-xs ${rule.is_active ? 'text-emerald-600' : 'opacity-70'}`}
                                     >
                                         <Power className="h-3.5 w-3.5" />
@@ -153,7 +153,7 @@ export default function AutoRepliesIndex({ autoReplies, devices }: Props) {
                                     </Button>
                                     <button
                                         type="button"
-                                        onClick={() => handleDelete(rule.id)}
+                                        onClick={() => handleDelete(rule.ulid)}
                                         className="p-2 text-[rgb(var(--muted))] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                                         title="حذف"
                                     >

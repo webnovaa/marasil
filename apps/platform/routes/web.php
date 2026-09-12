@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Web\Admin\AdminAiController;
 use App\Http\Controllers\Web\Admin\AdminDashboardPageController;
 use App\Http\Controllers\Web\Admin\AuditPageController;
 use App\Http\Controllers\Web\Admin\BroadcastController;
 use App\Http\Controllers\Web\Admin\HealthPageController;
+use App\Http\Controllers\Web\Admin\PaymentMethodsPageController;
 use App\Http\Controllers\Web\Admin\PlatformWhatsAppPageController;
 use App\Http\Controllers\Web\Admin\PendingUsersPageController;
 use App\Http\Controllers\Web\Admin\PlansPageController as AdminPlansPageController;
@@ -180,6 +182,11 @@ Route::middleware(['auth', 'verified.phone'])->group(function (): void {
         Route::get('/support/{ticketUlid}', AdminSupportTicketShowPageController::class)->name('support.show');
         Route::get('/broadcast', [BroadcastController::class, 'index'])->name('broadcast.index');
         Route::post('/broadcast', [BroadcastController::class, 'store'])->name('broadcast.store');
-        Route::post('/ai/toggle', [\App\Http\Controllers\Web\Admin\AdminAiController::class, 'toggle'])->name('ai.toggle');
+        Route::get('/settings', [AdminAiController::class, 'index'])->name('settings');
+        Route::post('/ai/toggle', [AdminAiController::class, 'toggle'])->name('ai.toggle');
+        Route::get('/payment-methods', [PaymentMethodsPageController::class, 'index'])->name('payment-methods.index');
+        Route::post('/payment-methods', [PaymentMethodsPageController::class, 'store'])->name('payment-methods.store');
+        Route::put('/payment-methods/{paymentMethod}', [PaymentMethodsPageController::class, 'update'])->name('payment-methods.update');
+        Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodsPageController::class, 'destroy'])->name('payment-methods.destroy');
     });
 });

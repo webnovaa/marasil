@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -21,25 +19,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'dark'];
-  const { user, apiUrl, updateApiUrl, logout } = useAuth();
-
-  const [editingUrl, setEditingUrl] = useState(apiUrl);
-  const [savingUrl, setSavingUrl] = useState(false);
-  const [urlSuccess, setUrlSuccess] = useState(false);
-
-  async function handleSaveServerUrl() {
-    if (!editingUrl.trim()) return;
-    setSavingUrl(true);
-    setUrlSuccess(false);
-
-    try {
-      await updateApiUrl(editingUrl.trim());
-      setUrlSuccess(true);
-      setTimeout(() => setUrlSuccess(false), 2500);
-    } finally {
-      setSavingUrl(false);
-    }
-  }
+  const { user, logout } = useAuth();
 
   function confirmLogout() {
     if (Platform.OS === 'web') {
@@ -67,16 +47,14 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {/* Header */}
       <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>الملف الشخصي والإعدادات</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>الملف الشخصي</Text>
         <Text style={[styles.headerSubtitle, { color: theme.textMuted }]}>
-          إدارة حسابك واتصال السيرفر
+          إدارة حسابك في التطبيق
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* User Card */}
         <View
           style={[
             styles.card,
@@ -103,60 +81,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Server Connection Config Card */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>إعدادات خادم المنصة (API Host)</Text>
-
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-          ]}
-        >
-          <Text style={[styles.settingHint, { color: theme.textMuted }]}>
-            عنوان السيرفر الذي يتصل به التطبيق لجلب وتحديث البيانات:
-          </Text>
-
-          <TextInput
-            value={editingUrl}
-            onChangeText={setEditingUrl}
-            placeholder="https://marasil.cloud"
-            placeholderTextColor={theme.textSubtle}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={[
-              styles.urlInput,
-              {
-                backgroundColor: theme.surfaceSoft,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
-            textAlign="left"
-          />
-
-          <View style={styles.saveUrlRow}>
-            {urlSuccess ? (
-              <View style={styles.successBadge}>
-                <MaterialCommunityIcons name="check-circle" size={16} color={theme.success} />
-                <Text style={[styles.successText, { color: theme.success }]}>تم الحفظ بنجاح</Text>
-              </View>
-            ) : <View />}
-
-            <TouchableOpacity
-              style={[styles.saveBtn, { backgroundColor: theme.primary }]}
-              onPress={() => void handleSaveServerUrl()}
-              disabled={savingUrl || !editingUrl.trim()}
-            >
-              {savingUrl ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text style={styles.saveBtnText}>حفظ العنوان</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Logout Button */}
         <TouchableOpacity
           style={[styles.logoutBtn, { borderColor: theme.danger }]}
           onPress={confirmLogout}
@@ -167,7 +91,6 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Footer info */}
         <View style={styles.footer}>
           <BrandLogo
             width={120}
@@ -178,7 +101,7 @@ export default function SettingsScreen() {
             {Brand.fullName}
           </Text>
           <Text style={[styles.footerVersion, { color: theme.textSubtle }]}>
-            الإصدار 1.0.0 (نظام المراقبة والتحكم)
+            الإصدار 1.0.0
           </Text>
         </View>
       </ScrollView>
@@ -241,49 +164,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginTop: 3,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-  settingHint: {
-    fontSize: 12,
-    marginBottom: 10,
-    textAlign: 'right',
-  },
-  urlInput: {
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  saveUrlRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  successBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  successText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  saveBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 10,
-  },
-  saveBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '800',
   },
   logoutBtn: {
     flexDirection: 'row',

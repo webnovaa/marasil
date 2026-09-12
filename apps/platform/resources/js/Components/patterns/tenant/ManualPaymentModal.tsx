@@ -20,6 +20,18 @@ import { Badge } from '@/Components/ui/Badge';
 import { annualPriceMinor, type BillingCycle, type PublicPlan } from '@/Components/patterns/PlanCard';
 import { cn } from '@/Lib/cn';
 
+export interface ManualPaymentMethod {
+    id: string;
+    code: string;
+    name: string;
+    badge: string | null;
+    address_or_code: string;
+    account_holder?: string | null;
+    network?: string | null;
+    instructions: string | null;
+    qr_payload: string;
+}
+
 export interface ManualPaymentModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -29,50 +41,8 @@ export interface ManualPaymentModalProps {
     onSubmit: (formData: FormData) => void;
     submitting: boolean;
     error: string | null;
+    methods: ManualPaymentMethod[];
 }
-
-type PaymentMethodId = 'usdt' | 'shamcash' | 'stcpay';
-
-interface PaymentMethodConfig {
-    id: PaymentMethodId;
-    name: string;
-    badge: string;
-    addressOrCode: string;
-    accountHolder?: string;
-    network?: string;
-    instructions: string;
-    qrPayload: string;
-}
-
-const PAYMENT_METHODS: PaymentMethodConfig[] = [
-    {
-        id: 'usdt',
-        name: 'USDT (TRC20)',
-        badge: 'عالمي وسريع',
-        addressOrCode: 'TJ9f8D2M2pXmN8eS7yQZ5V1bL3k4wU6hRq',
-        network: 'TRON (TRC20)',
-        instructions: 'أرسل المبلغ بالدولار الرقمي USDT عبر شبكة ترون TRC20 حصرًا لتفادي أي ضياع للرصيد.',
-        qrPayload: 'TJ9f8D2M2pXmN8eS7yQZ5V1bL3k4wU6hRq',
-    },
-    {
-        id: 'shamcash',
-        name: 'شام كاش / الهرم',
-        badge: 'سورية والمجاورة',
-        addressOrCode: '963955123456',
-        accountHolder: 'مكتب مراسيل لتقنية المعلومات / وسام محمد (دمشق - المرجة)',
-        instructions: 'حوّل عبر شام كاش برقم الحساب أعلاه، أو عبر مكتب الهرم / الفؤاد بالاسم المحدد ثم ارفع صورة الإشعار.',
-        qrPayload: 'shamcash:963955123456',
-    },
-    {
-        id: 'stcpay',
-        name: 'STC Pay / بنكي عربي',
-        badge: 'الخليج والدول العربية',
-        addressOrCode: 'SA0380000123608010123456',
-        accountHolder: 'مراسيل كلاود (هاتف STC Pay: 0501234567)',
-        instructions: 'التحويل المباشر عبر STC Pay أو عبر رقم الآيبان المصرفي الموضح.',
-        qrPayload: 'SA0380000123608010123456',
-    },
-];
 
 export function ManualPaymentModal({
     open,
@@ -83,8 +53,9 @@ export function ManualPaymentModal({
     onSubmit,
     submitting,
     error,
+    methods,
 }: ManualPaymentModalProps) {
-    const [selectedMethodId, setSelectedMethodId] = useState<PaymentMethodId>('usdt');
+    const [selectedMethodCode, setSelectedMethodCode] = useState<string>('');
     const [qrDataUrl, setQrDataUrl] = useState<string>('');
     const [copied, setCopied] = useState(false);
     const [paymentReference, setPaymentReference] = useState('');
@@ -92,7 +63,17 @@ export function ManualPaymentModal({
     const [paymentProof, setPaymentProof] = useState<File | null>(null);
     const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
-    const activeMethod = PAYMENT_METHODS.find((m) => m.id === selectedMethodId) ?? PAYMENT_METHODS[0];
+    useEffect(() => {
+        if (methods.length === 0) {
+            setSelectedMethodCode('');
+            return;
+        }
+        if (!methods.some((m) => m.code === selectedMethodCode)) {
+            setSelectedMethodCode(methods[0].code);
+        }
+    }, [methods, selectedMethodCode]);
+
+    const activeMethod = methods.find((m) => m.code === selectedMethodCode) ?? methods[0] ?? null;
 
     // Calculate final price
     const finalPriceMinor = plan
@@ -109,7 +90,7 @@ export function ManualPaymentModal({
     // Generate QR Code dynamically
     useEffect(() => {
         let isMounted = true;
-        QRCode.toDataURL(activeMethod.qrPayload, {
+        QRCode.toDataURL(activeMethod?.qr_payload || activeMethod?.address_or_code || '', {
             width: 320,
             margin: 2,
             color: {
@@ -127,7 +108,7 @@ export function ManualPaymentModal({
         return () => {
             isMounted = false;
         };
-    }, [activeMethod.qrPayload]);
+    }, [activeMethod?.qr_payload, activeMethod?.address_or_code]);
 
     // Handle Proof Preview
     useEffect(() => {
@@ -147,8 +128,9 @@ export function ManualPaymentModal({
     }, [paymentProof]);
 
     async function handleCopyCode() {
+        if (!activeMethod) return;
         try {
-            await navigator.clipboard.writeText(activeMethod.addressOrCode);
+            await navigator.clipboard.writeText(activeMethod.address_or_code);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
@@ -158,13 +140,13 @@ export function ManualPaymentModal({
 
     function handleSubmitForm(e: React.FormEvent) {
         e.preventDefault();
-        if (!plan) return;
+        if (!plan || !activeMethod) return;
 
         const formData = new FormData();
         formData.append('plan_id', plan.id);
         formData.append('billing_cycle', billingCycle);
         formData.append('type', 'new');
-        formData.append('payment_method', activeMethod.name);
+        formData.append('payment_method', activeMethod.code);
         if (paymentReference.trim()) {
             formData.append('payment_reference', paymentReference.trim());
         }
@@ -179,6 +161,26 @@ export function ManualPaymentModal({
     }
 
     if (!plan) return null;
+
+    if (methods.length === 0) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-md p-6">
+                    <DialogHeader>
+                        <DialogTitle>طرق الدفع غير متاحة</DialogTitle>
+                        <DialogDescription>
+                            لم تُضبط طرق دفع يدوية بعد من لوحة الإدارة. تواصل مع الدعم أو أعد المحاولة لاحقاً.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+                        إغلاق
+                    </Button>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    if (!activeMethod) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -259,13 +261,13 @@ export function ManualPaymentModal({
                             الخطوة 1: اختر طريقة الدفع المفضلة لديك
                         </label>
                         <div className="grid gap-2 sm:grid-cols-3">
-                            {PAYMENT_METHODS.map((method) => {
-                                const isSelected = method.id === selectedMethodId;
+                            {methods.map((method) => {
+                                const isSelected = method.code === selectedMethodCode;
                                 return (
                                     <button
-                                        key={method.id}
+                                        key={method.code}
                                         type="button"
-                                        onClick={() => setSelectedMethodId(method.id)}
+                                        onClick={() => setSelectedMethodCode(method.code)}
                                         className={cn(
                                             'relative flex flex-col items-start rounded-xl border p-3 text-start transition',
                                             isSelected
@@ -309,7 +311,7 @@ export function ManualPaymentModal({
                                 {qrDataUrl ? (
                                     <a
                                         href={qrDataUrl}
-                                        download={`payment-qr-${activeMethod.id}.png`}
+                                        download={`payment-qr-${activeMethod.code}.png`}
                                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-[rgb(var(--brand-700))] hover:underline"
                                     >
                                         <Download className="size-3.5" />
@@ -326,7 +328,7 @@ export function ManualPaymentModal({
                                     </span>
                                     <div className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-2 font-mono text-xs text-[rgb(var(--text))]">
                                         <span className="break-all select-all font-semibold" dir="ltr">
-                                            {activeMethod.addressOrCode}
+                                            {activeMethod.address_or_code}
                                         </span>
                                         <Button
                                             type="button"
@@ -348,10 +350,10 @@ export function ManualPaymentModal({
                                     </div>
                                 </div>
 
-                                {activeMethod.accountHolder ? (
+                                {activeMethod.account_holder ? (
                                     <div className="rounded-md bg-[rgb(var(--surface))] p-2 text-xs text-[rgb(var(--text))]">
                                         <span className="text-[rgb(var(--muted))]">المستلم: </span>
-                                        <span className="font-semibold">{activeMethod.accountHolder}</span>
+                                        <span className="font-semibold">{activeMethod.account_holder}</span>
                                     </div>
                                 ) : null}
 

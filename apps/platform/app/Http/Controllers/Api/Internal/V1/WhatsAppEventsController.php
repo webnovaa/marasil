@@ -326,7 +326,7 @@ final class WhatsAppEventsController extends Controller
     {
         try {
             // 1. Check Platform Master Switch
-            if (! \Illuminate\Support\Facades\Cache::get('platform.ai_master_enabled', true)) {
+            if (! \App\Domain\Platform\Models\PlatformSetting::isAiMasterEnabled()) {
                 return;
             }
 

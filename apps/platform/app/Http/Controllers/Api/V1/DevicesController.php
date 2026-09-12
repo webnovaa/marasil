@@ -164,9 +164,26 @@ final class DevicesController extends Controller
         ]);
         $validated['device_id'] = $device->ulid;
         $validated['idempotency_key'] = $request->header('Idempotency-Key');
-        $result = $action->handle($tenant, $validated);
 
-        return ApiResponse::success(['message' => MessageResource::make($result['message'])], 202, ['idempotent_replay' => ! $result['created']]);
+        try {
+            $result = $action->handle($tenant, $validated);
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return ApiResponse::error(
+                'TEST_MESSAGE_FAILED',
+                'تعذر قبول رسالة الاختبار. تحقق من اتصال الجهاز والطابور ثم أعد المحاولة.',
+                502,
+            );
+        }
+
+        return ApiResponse::success(
+            ['message' => MessageResource::make($result['message'])],
+            202,
+            ['idempotent_replay' => ! $result['created']],
+        );
     }
 
     public function socketToken(Request $request, Device $device): JsonResponse

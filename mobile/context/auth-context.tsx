@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, type UserProfile } from '@/services/api';
+import { Brand } from '@/constants/theme';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -7,9 +8,8 @@ interface AuthContextType {
   apiUrl: string;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phone: string, pass: string, customUrl?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (phone: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  updateApiUrl: (url: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -18,23 +18,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [apiUrl, setApiUrlState] = useState<string>(api.getApiUrl());
+  const [apiUrl] = useState<string>(Brand.defaultApiUrl);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadAuth() {
       try {
-        const init = await api.init();
-        setToken(init.token);
-        setApiUrlState(init.apiUrl);
-        if (init.user) setUser(init.user);
+        await api.init();
+        const currentToken = api.getToken();
+        setToken(currentToken);
 
-        if (init.token) {
+        if (currentToken) {
           const profile = await api.getMe();
           if (profile.success && profile.user) {
             setUser(profile.user);
           } else {
-            // Token expired or invalid
             await api.setToken(null);
             setToken(null);
             setUser(null);
@@ -50,14 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void loadAuth();
   }, []);
 
-  async function login(phone: string, pass: string, customUrl?: string) {
+  async function login(phone: string, pass: string) {
     setIsLoading(true);
     try {
-      const res = await api.login(phone, pass, customUrl);
+      const res = await api.login(phone, pass);
       if (res.success && res.user && res.token) {
         setUser(res.user);
         setToken(res.token);
-        setApiUrlState(api.getApiUrl());
         return { success: true };
       }
       return { success: false, error: res.error };
@@ -75,11 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  async function updateApiUrl(url: string) {
-    await api.setApiUrl(url);
-    setApiUrlState(api.getApiUrl());
   }
 
   async function refreshProfile() {
@@ -100,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: Boolean(token && user),
         login,
         logout,
-        updateApiUrl,
         refreshProfile,
       }}
     >

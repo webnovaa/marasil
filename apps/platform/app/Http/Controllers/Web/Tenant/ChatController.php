@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Tenant;
 
 use App\Domain\Contacts\Models\Contact;
+use App\Domain\Devices\Enums\DeviceStatus;
 use App\Domain\Devices\Models\Device;
+use App\Domain\Identity\Models\User;
 use App\Domain\Messaging\Actions\AcceptTextMessage;
 use App\Domain\Messaging\Models\InboundMessage;
 use App\Domain\Messaging\Models\Message;
 use App\Domain\Tenancy\Models\Tenant;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,17 +23,21 @@ final class ChatController extends Controller
 {
     public function index(Request $request): Response
     {
-        /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $this->tenantOrAbort($request);
 
-        // Fetch connected devices for sending
         $devices = Device::query()
             ->where('tenant_id', $tenant->id)
-            ->where('status', 'connected')
-            ->select(['id', 'ulid', 'display_name', 'phone_e164'])
-            ->get();
+            ->where('status', DeviceStatus::Connected)
+            ->orderBy('name')
+            ->get(['id', 'ulid', 'name', 'display_name', 'phone_e164'])
+            ->map(fn (Device $device): array => [
+                'id' => $device->id,
+                'ulid' => $device->ulid,
+                'display_name' => $device->display_name ?: $device->name,
+                'phone_e164' => $device->phone_e164,
+            ])
+            ->values();
 
-        // 1. Get distinct contact phones from inbound and outbound
         $inboundPhones = InboundMessage::query()
             ->where('tenant_id', $tenant->id)
             ->latest('id')
@@ -46,9 +52,8 @@ final class ChatController extends Controller
             ->pluck('recipient_e164')
             ->unique();
 
-        $allPhones = $inboundPhones->merge($outboundPhones)->unique()->values();
+        $allPhones = $inboundPhones->merge($outboundPhones)->filter()->unique()->values();
 
-        // Load contact names from address book
         $contactsMap = Contact::query()
             ->where('tenant_id', $tenant->id)
             ->whereIn('phone_e164', $allPhones)
@@ -102,8 +107,10 @@ final class ChatController extends Controller
             ];
         }
 
-        // Sort conversations latest first
-        usort($conversations, fn ($a, $b) => strcmp((string) $b['timestamp'], (string) $a['timestamp']));
+        usort(
+            $conversations,
+            fn (array $a, array $b): int => strcmp((string) ($b['timestamp'] ?? ''), (string) ($a['timestamp'] ?? '')),
+        );
 
         return Inertia::render('Tenant/Chat/Index', [
             'conversations' => $conversations,
@@ -113,11 +120,10 @@ final class ChatController extends Controller
 
     public function messages(Request $request): JsonResponse
     {
-        /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $this->tenantOrAbort($request);
         $phone = (string) $request->query('phone');
 
-        if (empty($phone)) {
+        if ($phone === '') {
             return response()->json(['messages' => []]);
         }
 
@@ -127,10 +133,10 @@ final class ChatController extends Controller
             ->latest('id')
             ->limit(50)
             ->get()
-            ->map(fn ($m) => [
-                'id' => 'in_' . $m->id,
+            ->map(fn (InboundMessage $m): array => [
+                'id' => 'in_'.$m->id,
                 'type' => 'inbound',
-                'body' => $m->body,
+                'body' => (string) ($m->body ?? ''),
                 'status' => 'received',
                 'created_at' => $m->created_at?->toIso8601String(),
                 'timestamp' => $m->created_at?->timestamp ?? 0,
@@ -142,10 +148,10 @@ final class ChatController extends Controller
             ->latest('id')
             ->limit(50)
             ->get()
-            ->map(fn ($m) => [
-                'id' => 'out_' . $m->id,
+            ->map(fn (Message $m): array => [
+                'id' => 'out_'.$m->id,
                 'type' => 'outbound',
-                'body' => $m->body,
+                'body' => (string) ($m->body ?? ''),
                 'status' => $m->status?->value ?? 'sent',
                 'created_at' => $m->created_at?->toIso8601String(),
                 'timestamp' => $m->created_at?->timestamp ?? 0,
@@ -160,8 +166,7 @@ final class ChatController extends Controller
 
     public function send(Request $request, AcceptTextMessage $acceptTextMessage): JsonResponse
     {
-        /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $this->tenantOrAbort($request);
 
         $validated = $request->validate([
             'phone' => ['required', 'string'],
@@ -178,43 +183,65 @@ final class ChatController extends Controller
                     ->first();
             }
 
-            if (! $device) {
+            if ($device === null) {
                 $device = Device::query()
                     ->where('tenant_id', $tenant->id)
-                    ->where('status', 'connected')
+                    ->where('status', DeviceStatus::Connected)
                     ->first();
             }
 
-            if (! $device) {
+            if ($device === null) {
                 return response()->json([
                     'error' => 'لا يوجد جهاز واتساب متصل حالياً للإرسال منه.',
                 ], 422);
             }
 
-            $message = $acceptTextMessage->handle(
-                tenant: $tenant,
-                data: [
+            $result = $acceptTextMessage->handle(
+                $tenant,
+                [
                     'device_id' => $device->ulid,
                     'to' => $validated['phone'],
                     'message' => $validated['message'],
-                    'category' => 'customer_support',
+                    'category' => 'transactional',
                 ],
             );
+
+            $message = $result['message'];
 
             return response()->json([
                 'success' => true,
                 'message' => [
-                    'id' => 'out_' . $message->id,
+                    'id' => 'out_'.$message->id,
                     'type' => 'outbound',
-                    'body' => $message->body,
-                    'status' => 'pending',
-                    'created_at' => now()->toIso8601String(),
+                    'body' => (string) ($message->body ?? $validated['message']),
+                    'status' => $message->status?->value ?? 'queued',
+                    'created_at' => $message->created_at?->toIso8601String() ?? now()->toIso8601String(),
                 ],
-            ]);
+            ], 202);
+        } catch (HttpResponseException $e) {
+            $response = $e->getResponse();
+            $payload = json_decode((string) $response->getContent(), true);
+            $message = is_array($payload)
+                ? (string) ($payload['error']['message'] ?? $payload['message'] ?? 'تعذر إرسال الرسالة.')
+                : 'تعذر إرسال الرسالة.';
+
+            return response()->json(['error' => $message], $response->getStatusCode());
         } catch (\Throwable $e) {
+            report($e);
+
             return response()->json([
-                'error' => 'تعذر إرسال الرسالة: ' . $e->getMessage(),
+                'error' => 'تعذر إرسال الرسالة. حاول مجدداً بعد قليل.',
             ], 500);
         }
+    }
+
+    private function tenantOrAbort(Request $request): Tenant
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $tenant = $user->primaryTenant();
+        abort_if($tenant === null, 403, 'No tenant available.');
+
+        return $tenant;
     }
 }

@@ -4,18 +4,30 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Admin;
 
+use App\Domain\Platform\Models\PlatformSetting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
+use Inertia\Response;
 
 final class AdminAiController extends Controller
 {
+    public function index(): Response
+    {
+        abort_unless(request()->user()?->hasPermission('settings.manage'), 403);
+
+        return Inertia::render('Admin/PlatformSettings/Index', [
+            'aiMasterEnabled' => PlatformSetting::isAiMasterEnabled(),
+        ]);
+    }
+
     public function toggle(Request $request): RedirectResponse
     {
-        $enabled = $request->boolean('enabled');
+        abort_unless($request->user()?->hasPermission('settings.manage'), 403);
 
-        Cache::forever('platform.ai_master_enabled', $enabled);
+        $enabled = $request->boolean('enabled');
+        PlatformSetting::setAiMasterEnabled($enabled);
 
         $msg = $enabled
             ? 'تم تفعيل مساعد الذكاء الاصطناعي على مستوى المنصة بنجاح.'

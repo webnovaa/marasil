@@ -18,7 +18,7 @@ final class AutoRepliesController extends Controller
     public function index(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $autoReplies = AutoReply::query()
             ->where('tenant_id', $tenant->id)
@@ -41,7 +41,7 @@ final class AutoRepliesController extends Controller
     public function store(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:128'],

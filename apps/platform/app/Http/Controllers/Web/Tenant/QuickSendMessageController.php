@@ -28,7 +28,7 @@ final class QuickSendMessageController extends Controller
     public function __invoke(Request $request): RedirectResponse
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         if (! $this->subscriptionGate->canSend($tenant)) {
             return back()->with('error', 'يلزم اشتراك نشط لإرسال الرسائل عبر واتساب.');

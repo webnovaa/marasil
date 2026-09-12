@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { PlanCard, type BillingCycle, type PublicPlan } from '@/Components/patterns/PlanCard';
 import { TenantPanel } from '@/Components/patterns/tenant/TenantPanel';
-import { ManualPaymentModal } from '@/Components/patterns/tenant/ManualPaymentModal';
+import { ManualPaymentModal, type ManualPaymentMethod } from '@/Components/patterns/tenant/ManualPaymentModal';
 import TenantShell from '@/Layouts/TenantShell';
 import { isFreePlan } from '@/Lib/plans';
 import { cn } from '@/Lib/cn';
@@ -10,6 +10,7 @@ import { cn } from '@/Lib/cn';
 type Props = {
     plans: PublicPlan[];
     has_pending_request: boolean;
+    payment_methods: ManualPaymentMethod[];
 };
 
 function flattenErrors(errors: Record<string, string | string[]>): string {
@@ -19,7 +20,7 @@ function flattenErrors(errors: Record<string, string | string[]>): string {
         .join(' ');
 }
 
-export default function PlansIndex({ plans, has_pending_request }: Props) {
+export default function PlansIndex({ plans, has_pending_request, payment_methods }: Props) {
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
     const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -173,6 +174,7 @@ export default function PlansIndex({ plans, has_pending_request }: Props) {
                 }}
                 submitting={submittingPlanId === selectedPlan?.id}
                 error={error}
+                methods={payment_methods ?? []}
             />
         </TenantShell>
     );

@@ -20,7 +20,7 @@ final class AnalyticsController extends Controller
     public function index(Request $request): Response
     {
         /** @var Tenant $tenant */
-        $tenant = $request->user()->tenant;
+        $tenant = $request->user()->requirePrimaryTenant();
 
         $totalOutbound = Message::query()->where('tenant_id', $tenant->id)->count();
         $totalInbound = InboundMessage::query()->where('tenant_id', $tenant->id)->count();
