@@ -37,7 +37,10 @@ final class AdminRejectSubscriptionRequest
             $userAgent,
             $requestId,
         ): SubscriptionRequest {
-            $before = ['status' => $request->status->value];
+            $beforeStatus = $request->status instanceof SubscriptionRequestStatus
+                ? $request->status->value
+                : (is_string($request->status) ? $request->status : 'pending');
+            $before = ['status' => $beforeStatus];
 
             $request->forceFill([
                 'status' => SubscriptionRequestStatus::Rejected,
