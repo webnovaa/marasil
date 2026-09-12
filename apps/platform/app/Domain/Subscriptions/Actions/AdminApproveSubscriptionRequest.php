@@ -53,6 +53,7 @@ final class AdminApproveSubscriptionRequest
             $plan,
             $graceDays,
             $durationDays,
+            $isYearly,
         ): Subscription {
             $startsAt = now();
             $endsAt = $startsAt->copy()->addDays($durationDays);
@@ -61,9 +62,11 @@ final class AdminApproveSubscriptionRequest
             // Free the unique active slot before inserting a new active subscription.
             Subscription::query()
                 ->where('tenant_id', $request->tenant_id)
-                ->where('status', SubscriptionStatus::Active)
+                ->where('status', SubscriptionStatus::Active->value)
                 ->each(function (Subscription $existing) use ($actor, $startsAt): void {
                     $from = $existing->status;
+                    $fromVal = $from instanceof SubscriptionStatus ? $from->value : (is_string($from) ? $from : 'active');
+
                     $existing->forceFill([
                         'status' => SubscriptionStatus::Cancelled,
                     ])->save();
@@ -72,7 +75,7 @@ final class AdminApproveSubscriptionRequest
                         'subscription_id' => $existing->id,
                         'actor_user_id' => $actor->id,
                         'event_type' => 'subscription.superseded',
-                        'from_status' => $from->value,
+                        'from_status' => $fromVal,
                         'to_status' => SubscriptionStatus::Cancelled->value,
                         'details' => [
                             'reason' => 'replaced_by_new_approval',
@@ -82,6 +85,8 @@ final class AdminApproveSubscriptionRequest
                 });
 
             $snapshot = $plan->limitSnapshot();
+            unset($snapshot['annual_discount_percent']);
+
             if ($isYearly) {
                 $snapshot['duration_days'] = 365;
                 if ($request->amount_minor !== null && $request->amount_minor > 0) {
