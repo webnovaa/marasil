@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle2, KeyRound, Smartphone, Webhook } from 'lucide-react';
+import { CheckCircle2, KeyRound, Smartphone, Webhook, ShieldCheck } from 'lucide-react';
 import MarketingLayout from '@/Components/patterns/MarketingLayout';
 import { Alert } from '@/Components/ui/Alert';
 import { CodeBlock } from '@/Components/ui/CodeBlock';
@@ -15,6 +15,7 @@ const SECTIONS = [
     { id: 'device', label: 'ربط الجهاز' },
     { id: 'auth', label: 'المصادقة' },
     { id: 'send', label: 'إرسال رسالة' },
+    { id: 'check-number', label: 'فحص وتأكيد الأرقام' },
     { id: 'status', label: 'متابعة الحالة' },
     { id: 'webhooks', label: 'إشعارات السيرفر' },
     { id: 'errors', label: 'الأخطاء والحدود' },
@@ -22,23 +23,25 @@ const SECTIONS = [
 ] as const;
 
 export default function DocsPage({ apiBaseUrl, appOrigin }: Props) {
-    const curlExample = `curl -X POST "${apiBaseUrl}/messages/text" \\
-  -H "Authorization: Bearer mrs_live_YOUR_KEY" \\
+    const curlExample = `curl -X POST "${apiBaseUrl}/messages/send" \\
   -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: order-1001" \\
   -d '{
+    "username": "YOUR_USERNAME",
+    "device": "YOUR_DEVICE_NAME",
     "to": "+9639XXXXXXXX",
     "message": "مرحبا من مراسيل"
   }'`;
 
-    const nodeExample = `const res = await fetch("${apiBaseUrl}/messages/text", {
+    const getExample = `${apiBaseUrl}/messages/send?username=YOUR_USERNAME&device=YOUR_DEVICE_NAME&to=+9639XXXXXXXX&message=مرحبا+من+مراسيل`;
+
+    const nodeExample = `const res = await fetch("${apiBaseUrl}/messages/send", {
   method: "POST",
   headers: {
-    Authorization: "Bearer mrs_live_YOUR_KEY",
     "Content-Type": "application/json",
-    "Idempotency-Key": crypto.randomUUID(),
   },
   body: JSON.stringify({
+    username: "YOUR_USERNAME",
+    device: "YOUR_DEVICE_NAME",
     to: "+9639XXXXXXXX",
     message: "مرحبا من مراسيل",
   }),
@@ -47,16 +50,16 @@ export default function DocsPage({ apiBaseUrl, appOrigin }: Props) {
 const json = await res.json();
 console.log(json);`;
 
-    const phpExample = `$ch = curl_init('${apiBaseUrl}/messages/text');
+    const phpExample = `$ch = curl_init('${apiBaseUrl}/messages/send');
 curl_setopt_array($ch, [
   CURLOPT_POST => true,
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_HTTPHEADER => [
-    'Authorization: Bearer mrs_live_YOUR_KEY',
     'Content-Type: application/json',
-    'Idempotency-Key: order-1001',
   ],
   CURLOPT_POSTFIELDS => json_encode([
+    'username' => 'YOUR_USERNAME',
+    'device' => 'YOUR_DEVICE_NAME',
     'to' => '+9639XXXXXXXX',
     'message' => 'مرحبا من مراسيل',
   ], JSON_UNESCAPED_UNICODE),
@@ -121,15 +124,15 @@ function verify(secret, timestamp, rawBody, signatureHeader) {
                             </li>
                             <li className="flex gap-3">
                                 <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--brand-900))] text-xs font-bold text-white">3</span>
-                                بعد الاتصال انسخ <strong>API Key</strong> من صفحة الجهاز (يظهر مرة واحدة) وخزّنه في متغيرات البيئة.
+                                بعد الاتصال، افتح صفحة الجهاز وانسخ: <strong>رابط الإرسال</strong>، <strong>اسم الجهاز</strong>، و<strong>اسم المستخدم</strong>.
                             </li>
                             <li className="flex gap-3">
                                 <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--brand-900))] text-xs font-bold text-white">4</span>
-                                أرسل طلب <code dir="ltr">POST /api/v1/messages/text</code> مع Bearer token.
+                                أرسل طلبك مباشرة عبر POST أو رابط GET سريع بدون أي مفاتيح API.
                             </li>
                         </ol>
-                        <Alert tone="neutral" title="Base URL">
-                            <code dir="ltr">{apiBaseUrl}</code>
+                        <Alert tone="neutral" title="رابط الإرسال">
+                            <code dir="ltr">{`${apiBaseUrl}/messages/send`}</code>
                         </Alert>
                     </section>
 
@@ -138,44 +141,108 @@ function verify(secret, timestamp, rawBody, signatureHeader) {
                             <Smartphone className="size-6" /> 2) ربط الجهاز بشكل صحيح
                         </h2>
                         <ul className="list-disc space-y-2 pe-5 text-body text-[rgb(var(--muted))]">
-                            <li>الجهاز لازم يكون بحالة <strong>متصل</strong> قبل أي إرسال عبر API.</li>
+                            <li>الجهاز لازم يكون بحالة <strong>متصل</strong> قبل أي إرسال.</li>
                             <li>افتح واتساب على الهاتف → الإعدادات → الأجهزة المرتبطة → ربط جهاز → امسح QR.</li>
                             <li>لا تسجّل خروج واتساب من الهاتف أثناء الربط، ولا تعيد مسح QR على جلسة أخرى لنفس الجهاز إلا بعد Logout من اللوحة.</li>
                             <li>اختبر الإرسال من زر «تجربة الإرسال» داخل صفحة الجهاز قبل الربط بمشروعك.</li>
                         </ul>
-                        <Alert tone="warning" title="مهم">
-                            مفتاح الجهاز مرتبط بهذا الجهاز فقط. لا تحتاج تمرير <code dir="ltr">device_id</code> في جسم الطلب عند استخدامه.
-                        </Alert>
                     </section>
 
                     <section id="auth" className="scroll-mt-28 space-y-4">
                         <h2 className="flex items-center gap-2 text-h2 text-[rgb(var(--brand-950))]">
-                            <KeyRound className="size-6" /> 3) المصادقة
+                            <KeyRound className="size-6" /> 3) بيانات الربط (طريقة سهلة ومباشرة)
                         </h2>
                         <p className="text-body text-[rgb(var(--muted))]">
-                            عند إنشاء الجهاز يُنشأ مفتاح الإرسال تلقائياً. انسخه من صفحة الجهاز واستخدمه هكذا:
+                            لا حاجة لإنشاء أو إدارة مفاتيح API معقدة أو Bearer tokens. الربط مع أي متجر أو نظام خارجي يحتاج فقط:
                         </p>
-                        <CodeBlock language="http" code={`Authorization: Bearer mrs_live_...`} />
-                        <Alert tone="neutral" title="لا تنشئ مفاتيح يدوياً">
-                            لا توجد صفحة منفصلة لمفاتيح API. كل جهاز له مفتاح واحد. إذا فقدته استخدم «تجديد المفتاح» من صفحة الجهاز.
-                        </Alert>
+                        <div className="grid gap-3 sm:grid-cols-3 pt-2">
+                            <div className="rounded-[var(--radius-md)] border border-[rgb(var(--border-subtle))] bg-[rgb(var(--surface-soft))] p-3">
+                                <span className="text-xs font-semibold text-[rgb(var(--muted))]">العنصر 1</span>
+                                <p className="text-sm font-bold text-[rgb(var(--brand-950))]">رابط الإرسال</p>
+                                <p className="text-xs text-[rgb(var(--muted))] mt-1">الرابط المباشر الذي تستقبله المنصة لإرسال الرسائل.</p>
+                            </div>
+                            <div className="rounded-[var(--radius-md)] border border-[rgb(var(--border-subtle))] bg-[rgb(var(--surface-soft))] p-3">
+                                <span className="text-xs font-semibold text-[rgb(var(--muted))]">العنصر 2</span>
+                                <p className="text-sm font-bold text-[rgb(var(--brand-950))]">اسم الجهاز</p>
+                                <p className="text-xs text-[rgb(var(--muted))] mt-1">اسم الجهاز الذي حددته في لوحة التحكم.</p>
+                            </div>
+                            <div className="rounded-[var(--radius-md)] border border-[rgb(var(--border-subtle))] bg-[rgb(var(--surface-soft))] p-3">
+                                <span className="text-xs font-semibold text-[rgb(var(--muted))]">العنصر 3</span>
+                                <p className="text-sm font-bold text-[rgb(var(--brand-950))]">اسم المستخدم</p>
+                                <p className="text-xs text-[rgb(var(--muted))] mt-1">معرّف حسابك (الـ Username أو رقم الهاتف).</p>
+                            </div>
+                        </div>
                     </section>
 
                     <section id="send" className="scroll-mt-28 space-y-4">
                         <h2 className="text-h2 text-[rgb(var(--brand-950))]">4) إرسال رسالة نصية</h2>
                         <p className="text-body text-[rgb(var(--muted))]">
-                            أرسل فقط لمستلمين وافقوا على التواصل. استخدم <code dir="ltr">Idempotency-Key</code> فريداً لكل عملية منطقية حتى لا يتكرر الخصم عند إعادة المحاولة.
+                            يمكنك الإرسال عبر طلب POST مع JSON أو استخدام رابط GET المباشر المناسب جداً للـ Webhooks:
                         </p>
-                        <CodeBlock language="bash" code={curlExample} />
-                        <CodeBlock language="javascript" code={nodeExample} />
-                        <CodeBlock language="php" code={phpExample} />
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-[rgb(var(--brand-950))]">أ) طلب POST (JSON)</h4>
+                            <CodeBlock language="bash" code={curlExample} />
+                            
+                            <h4 className="text-sm font-semibold text-[rgb(var(--brand-950))] pt-2">ب) رابط GET مباشر (للمتصفح والـ Webhooks)</h4>
+                            <CodeBlock language="http" code={getExample} />
+
+                            <h4 className="text-sm font-semibold text-[rgb(var(--brand-950))] pt-2">ج) كود Node.js</h4>
+                            <CodeBlock language="javascript" code={nodeExample} />
+
+                            <h4 className="text-sm font-semibold text-[rgb(var(--brand-950))] pt-2">د) كود PHP</h4>
+                            <CodeBlock language="php" code={phpExample} />
+                        </div>
                         <Alert tone="info" title="شكل الاستجابة الناجحة">
-                            الطلب يُقبل عادةً بـ <code dir="ltr">202</code> مع معرّف الرسالة وحالة مثل <code dir="ltr">queued</code>. هذا يعني القبول في الطابور وليس بالضرورة وصول الرسالة بعد.
+                            الطلب يُقبل عادةً بـ <code dir="ltr">202</code> مع معرّف الرسالة وحالة مثل <code dir="ltr">queued</code>. هذا يعني القبول في الطابور بنجاح.
                         </Alert>
                     </section>
 
+                    <section id="check-number" className="scroll-mt-28 space-y-4">
+                        <h2 className="flex items-center gap-2 text-h2 text-[rgb(var(--brand-950))]">
+                            <ShieldCheck className="size-6 text-emerald-600" /> 5) فحص وتأكيد أرقام الواتساب (Lookup API)
+                        </h2>
+                        <p className="text-body text-[rgb(var(--muted))]">
+                            ميزة أمان فائقة: تحقق فورياً مما إذا كان رقم العميل يملك حساب واتساب نشط قبل إرسال الرسائل في متجرك (سلة، زد، ووكومرس، CRM) لتجنب حظر الأرقام الناتج عن مراسلة أرقام وهمية أو غير مسجلة.
+                        </p>
+
+                        <div className="space-y-3">
+                            <h3 className="text-h3 text-[rgb(var(--brand-950))]">أ) استدعاء مباشر GET / Webhook</h3>
+                            <CodeBlock
+                                language="http"
+                                code={`${apiBaseUrl}/numbers/check?username=YOUR_USERNAME&device=YOUR_DEVICE_NAME&phone=+9639XXXXXXXX`}
+                            />
+
+                            <h3 className="text-h3 text-[rgb(var(--brand-950))] pt-2">ب) طلب POST (JSON)</h3>
+                            <CodeBlock
+                                language="bash"
+                                code={`curl -X POST "${apiBaseUrl}/numbers/check" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "username": "YOUR_USERNAME",
+    "device": "YOUR_DEVICE_NAME",
+    "phone": "+9639XXXXXXXX"
+  }'`}
+                            />
+
+                            <h3 className="text-h3 text-[rgb(var(--brand-950))] pt-2">ج) نموذج استجابة الفحص</h3>
+                            <CodeBlock
+                                language="json"
+                                code={`{
+  "success": true,
+  "data": {
+    "phone": "+9639XXXXXXXX",
+    "exists": true,
+    "status": "valid",
+    "device": "YOUR_DEVICE_NAME",
+    "message": "الرقم يملك حساب واتساب نشط وجاهز لاستقبال الرسائل"
+  }
+}`}
+                            />
+                        </div>
+                    </section>
+
                     <section id="status" className="scroll-mt-28 space-y-4">
-                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">5) متابعة حالة الرسالة</h2>
+                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">6) متابعة حالة الرسالة</h2>
                         <CodeBlock
                             language="bash"
                             code={`curl "${apiBaseUrl}/messages/{message_ulid}" \\
@@ -188,7 +255,7 @@ function verify(secret, timestamp, rawBody, signatureHeader) {
 
                     <section id="webhooks" className="scroll-mt-28 space-y-4">
                         <h2 className="flex items-center gap-2 text-h2 text-[rgb(var(--brand-950))]">
-                            <Webhook className="size-6" /> 6) إشعارات السيرفر (اختياري)
+                            <Webhook className="size-6" /> 7) إشعارات السيرفر (اختياري)
                         </h2>
                         <p className="text-body text-[rgb(var(--muted))]">
                             لمعظم الحسابات يكفي تفعيل تنبيهات واتساب من صفحة <Link href="/webhooks" className="underline">إشعارات الإرسال</Link>.
@@ -208,7 +275,7 @@ function verify(secret, timestamp, rawBody, signatureHeader) {
                     </section>
 
                     <section id="errors" className="scroll-mt-28 space-y-4">
-                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">7) أخطاء شائعة وحدود الخطة</h2>
+                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">8) أخطاء شائعة وحدود الخطة</h2>
                         <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[rgb(var(--border))]">
                             <table className="w-full min-w-[32rem] text-start text-sm">
                                 <thead className="bg-[rgb(var(--surface-soft))] text-[rgb(var(--brand-950))]">
@@ -248,7 +315,7 @@ function verify(secret, timestamp, rawBody, signatureHeader) {
                     </section>
 
                     <section id="checklist" className="scroll-mt-28 space-y-4">
-                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">8) قائمة تحقق قبل الإطلاق</h2>
+                        <h2 className="text-h2 text-[rgb(var(--brand-950))]">9) قائمة تحقق قبل الإطلاق</h2>
                         <ul className="space-y-2 text-body text-[rgb(var(--muted))]">
                             {[
                                 'الجهاز متصل في لوحة التحكم',

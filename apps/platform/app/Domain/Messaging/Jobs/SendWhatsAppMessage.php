@@ -77,25 +77,49 @@ final class SendWhatsAppMessage implements ShouldQueue
                 return;
             }
 
-            $result = $client->sendMessage([
-                'command_id' => 'send_'.$message->ulid,
-                'device_id' => $device->ulid,
-                'tenant_id' => $device->tenant?->ulid,
-                'lease_generation' => $device->lease_generation,
-                'message_id' => $message->ulid,
-                'recipient' => $message->recipient_e164,
-                ...app(MessageTransportPayload::class)->content($message),
-            ]);
+            $content = app(MessageTransportPayload::class)->content($message);
+            if ($message->type === MessageType::Text) {
+                $result = $client->sendMessage([
+                    'command_id' => 'send_'.$message->ulid,
+                    'device_id' => $device->ulid,
+                    'tenant_id' => $device->tenant?->ulid,
+                    'lease_generation' => $device->lease_generation,
+                    'message_id' => $message->ulid,
+                    'recipient' => $message->recipient_e164,
+                    'text' => $content['text'],
+                ]);
+            } else {
+                [$disk, $path] = array_pad(explode(':', (string) $message->media_path, 2), 2, '');
+                $mediaUrl = url(\Illuminate\Support\Facades\Storage::disk($disk)->url($path));
+                $result = $client->sendMedia([
+                    'command_id' => 'send_media_'.$message->ulid,
+                    'device_id' => $device->ulid,
+                    'tenant_id' => $device->tenant?->ulid,
+                    'lease_generation' => $device->lease_generation,
+                    'message_id' => $message->ulid,
+                    'recipient' => $message->recipient_e164,
+                    'media_type' => $message->type->value,
+                    'media_url' => $mediaUrl,
+                    'caption' => $message->caption ?? '',
+                    'file_name' => $content['media']['filename'] ?? 'attachment',
+                    'mimetype' => $content['media']['mimetype'] ?? 'application/octet-stream',
+                ]);
+            }
 
             $data = is_array($result['data'] ?? null) ? $result['data'] : $result;
             $status = (string) ($data['status'] ?? 'sent');
-
             if ($status === 'failed') {
+                $errorCode = (string) ($data['error_code'] ?? 'PROVIDER_TEMPORARILY_UNAVAILABLE');
+                $errorMessage = match ($errorCode) {
+                    'RECIPIENT_NOT_ON_WHATSAPP' => 'الرقم غير مسجل في واتساب (Recipient is not registered on WhatsApp).',
+                    default => (string) ($data['error_message'] ?? 'Send failed.'),
+                };
+
                 $message->update([
                     'status' => MessageStatus::Failed,
                     'failed_at' => now(),
-                    'error_code' => (string) ($data['error_code'] ?? 'PROVIDER_TEMPORARILY_UNAVAILABLE'),
-                    'error_message' => (string) ($data['error_message'] ?? 'Send failed.'),
+                    'error_code' => $errorCode,
+                    'error_message' => $errorMessage,
                 ]);
 
                 $attempt->update([
@@ -180,16 +204,23 @@ final class SendWhatsAppMessage implements ShouldQueue
 
         $to = (string) $message->recipient_e164;
         $code = (string) ($message->error_code ?? 'FAILED');
+        $reasonArabic = match ($code) {
+            'RECIPIENT_NOT_ON_WHATSAPP' => 'الرقم ليس لديه حساب واتساب نشط',
+            'DEVICE_DISCONNECTED' => 'جهاز الإرسال غير متصل بالشبكة',
+            'RATE_LIMIT_EXCEEDED' => 'تم تجاوز حد الإرسال المسموح في باقتك',
+            default => (string) ($message->error_message ?? 'تعذر الإرسال عبر المزود'),
+        };
 
         $ownerAlerts->alert(
             tenant: $tenant,
             type: 'message.failed',
-            title: 'فشل إرسال رسالة',
-            body: "تعذر إرسال رسالة إلى {$to}. الرمز: {$code}. راجع صفحة الرسائل.",
+            title: 'فشل إرسال رسالة واتساب',
+            body: "تعذر تسليم الرسالة للرقم {$to}. السبب: {$reasonArabic}.",
             data: [
                 'message_id' => $message->ulid,
                 'to' => $to,
                 'error_code' => $code,
+                'reason' => $reasonArabic,
             ],
             dedupeKey: 'message-failed:'.$message->ulid,
         );

@@ -19,6 +19,7 @@ final class CreateSubscriptionRequest
 {
     /**
      * @param  array{
+     *     billing_cycle?: string|null,
      *     payment_method?: string|null,
      *     payment_reference?: string|null,
      *     payment_proof_path?: string|null,
@@ -49,12 +50,22 @@ final class CreateSubscriptionRequest
             ]);
         }
 
-        return DB::transaction(function () use ($tenant, $requester, $plan, $type, $payment): SubscriptionRequest {
+        $billingCycle = ($payment['billing_cycle'] ?? 'monthly') === 'yearly' ? 'yearly' : 'monthly';
+        $amountMinor = $plan->price_minor;
+
+        if ($billingCycle === 'yearly' && $plan->price_minor > 0) {
+            $discount = (int) ($plan->annual_discount_percent ?? 0);
+            $amountMinor = (int) round($plan->price_minor * 12 * (1 - $discount / 100));
+        }
+
+        return DB::transaction(function () use ($tenant, $requester, $plan, $type, $payment, $billingCycle, $amountMinor): SubscriptionRequest {
             $request = SubscriptionRequest::query()->create([
                 'tenant_id' => $tenant->id,
                 'plan_id' => $plan->id,
                 'requested_by' => $requester->id,
                 'type' => $type,
+                'billing_cycle' => $billingCycle,
+                'amount_minor' => $amountMinor,
                 'status' => SubscriptionRequestStatus::Pending,
                 'payment_method' => $payment['payment_method'] ?? null,
                 'payment_reference' => $payment['payment_reference'] ?? null,
@@ -66,7 +77,7 @@ final class CreateSubscriptionRequest
                 Payment::query()->create([
                     'tenant_id' => $tenant->id,
                     'subscription_request_id' => $request->id,
-                    'amount_minor' => $plan->price_minor,
+                    'amount_minor' => $amountMinor,
                     'currency' => $plan->currency,
                     'provider' => $payment['payment_method'] ?? 'manual',
                     'provider_reference' => $payment['payment_reference'] ?? null,
@@ -74,6 +85,7 @@ final class CreateSubscriptionRequest
                     'proof_path' => $payment['payment_proof_path'] ?? null,
                     'metadata' => [
                         'source' => 'subscription_request',
+                        'billing_cycle' => $billingCycle,
                     ],
                 ]);
             }

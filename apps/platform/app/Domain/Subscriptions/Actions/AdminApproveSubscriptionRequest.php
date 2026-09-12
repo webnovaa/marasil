@@ -40,7 +40,8 @@ final class AdminApproveSubscriptionRequest
         }
 
         $graceDays = (int) config('subscriptions.grace_days', 3);
-        $durationDays = max(1, (int) ($plan->duration_days ?? 30));
+        $isYearly = ($request->billing_cycle === 'yearly');
+        $durationDays = $isYearly ? 365 : max(1, (int) ($plan->duration_days ?? 30));
 
         return DB::transaction(function () use (
             $actor,
@@ -81,6 +82,12 @@ final class AdminApproveSubscriptionRequest
                 });
 
             $snapshot = $plan->limitSnapshot();
+            if ($isYearly) {
+                $snapshot['duration_days'] = 365;
+                if ($request->amount_minor !== null && $request->amount_minor > 0) {
+                    $snapshot['price_minor'] = $request->amount_minor;
+                }
+            }
 
             $subscription = Subscription::query()->create(array_merge($snapshot, [
                 'tenant_id' => $request->tenant_id,

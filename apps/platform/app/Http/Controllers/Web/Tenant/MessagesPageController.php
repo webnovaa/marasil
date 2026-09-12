@@ -40,10 +40,19 @@ final class MessagesPageController extends Controller
 
         $messages = $query?->paginate(25)->withQueryString();
 
+        $devices = $tenant
+            ? \App\Domain\Devices\Models\Device::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('status', 'connected')
+                ->select(['id', 'ulid', 'display_name', 'phone_e164', 'status'])
+                ->get()
+            : [];
+
         return Inertia::render('Tenant/Messages/Index', [
             'messages' => $messages
                 ? $messages->getCollection()->map(fn (Message $m) => MessageResource::make($m))->values()
                 : [],
+            'devices' => $devices,
             'filters' => ['status' => $status, 'search' => $search],
             'pagination' => $messages ? [
                 'current_page' => $messages->currentPage(),

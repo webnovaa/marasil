@@ -10,6 +10,14 @@ import {
     UserRound,
     Webhook,
     BarChart3,
+    Megaphone,
+    Users,
+    Bot,
+    Sparkles,
+    MessagesSquare,
+    ShoppingBag,
+    Code2,
+    TrendingUp,
 } from 'lucide-react';
 import { t, type Locale } from '@/i18n';
 
@@ -36,8 +44,16 @@ export function getTenantNavGroups(locale: Locale): TenantNavGroup[] {
             labelKey: 'nav.groups.workspace',
             items: [
                 { id: 'dashboard', titleKey: 'nav.dashboard', href: '/tenant', icon: LayoutDashboard, requiresSubscription: true },
+                { id: 'chat', titleKey: 'nav.chat', href: '/chat', icon: MessagesSquare, requiresSubscription: true },
+                { id: 'aiAssistant', titleKey: 'nav.aiAssistant', href: '/ai-assistant', icon: Sparkles, requiresSubscription: true },
                 { id: 'devices', titleKey: 'nav.devices', href: '/devices', icon: Smartphone, requiresSubscription: true },
                 { id: 'messages', titleKey: 'nav.messages', href: '/messages', icon: MessageSquare, requiresSubscription: true },
+                { id: 'campaigns', titleKey: 'nav.campaigns', href: '/campaigns', icon: Megaphone, requiresSubscription: true },
+                { id: 'contacts', titleKey: 'nav.contacts', href: '/contacts', icon: Users, requiresSubscription: true },
+                { id: 'autoReplies', titleKey: 'nav.autoReplies', href: '/auto-replies', icon: Bot, requiresSubscription: true },
+                { id: 'integrations', titleKey: 'nav.integrations', href: '/integrations', icon: ShoppingBag, requiresSubscription: true },
+                { id: 'widget', titleKey: 'nav.widget', href: '/widget', icon: Code2, requiresSubscription: true },
+                { id: 'analytics', titleKey: 'nav.analytics', href: '/analytics', icon: TrendingUp, requiresSubscription: true },
                 { id: 'webhooks', titleKey: 'nav.webhooks', href: '/webhooks', icon: Webhook, requiresSubscription: true },
             ],
         },

@@ -5,6 +5,7 @@ import {
     CreditCard,
     LayoutDashboard,
     LifeBuoy,
+    Megaphone,
     MessageCircle,
     Package,
     ScrollText,
@@ -60,6 +61,7 @@ export function getAdminNavGroups(locale: Locale): AdminNavGroup[] {
             id: 'ops',
             labelKey: 'nav.admin.support',
             items: [
+                { id: 'broadcast', titleKey: 'nav.admin.broadcast', href: '/admin/broadcast', icon: Megaphone },
                 { id: 'support', titleKey: 'nav.admin.support', href: '/admin/support', icon: LifeBuoy },
                 { id: 'audit', titleKey: 'nav.admin.audit', href: '/admin/audit', icon: ScrollText },
             ],

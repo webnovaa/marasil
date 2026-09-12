@@ -22,6 +22,8 @@ class SubscriptionRequest extends Model
         'plan_id',
         'requested_by',
         'type',
+        'billing_cycle',
+        'amount_minor',
         'status',
         'payment_method',
         'payment_reference',
@@ -38,6 +40,7 @@ class SubscriptionRequest extends Model
         return [
             'type' => SubscriptionRequestType::class,
             'status' => SubscriptionRequestStatus::class,
+            'amount_minor' => 'integer',
             'reviewed_at' => 'datetime',
         ];
     }

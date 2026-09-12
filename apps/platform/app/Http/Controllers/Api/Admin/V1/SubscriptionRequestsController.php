@@ -111,7 +111,7 @@ final class SubscriptionRequestsController extends Controller
         ]);
     }
 
-    public function paymentProof(Request $request, string $requestUlid): StreamedResponse|JsonResponse
+    public function paymentProof(Request $request, string $requestUlid): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorize('viewAny', SubscriptionRequest::class);
 
@@ -125,7 +125,11 @@ final class SubscriptionRequestsController extends Controller
             return ApiResponse::error('NOT_FOUND', 'Payment proof not found.', 404);
         }
 
-        return Storage::disk('local')->download($path, basename($path));
+        if ($request->boolean('download')) {
+            return Storage::disk('local')->download($path, basename($path));
+        }
+
+        return Storage::disk('local')->response($path);
     }
 
     private function requestId(Request $request): string

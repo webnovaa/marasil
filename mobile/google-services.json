@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "332923088474",
+    "project_id": "marasil-7f864",
+    "storage_bucket": "marasil-7f864.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:332923088474:android:d9957d864711e6db4df263",
+        "android_client_info": {
+          "package_name": "com.wesamjop.marasil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSJi4YshMLRRFuUHrJxKe4Fhl2xGVFb8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

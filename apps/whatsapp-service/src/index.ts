@@ -13,7 +13,7 @@ import { verifyInternalHmac, type RequestWithRawBody } from './middleware/hmac.j
 import { postPlatformEvent } from './platform-events.js';
 
 const logger = pino({ level: process.env.LOG_LEVEL ?? 'info', redact: { paths: ['req.headers.authorization', 'req.headers.x-socket-token', 'body.qr', '*.qr', '*.credentials', '*.session'], censor: '[REDACTED]' } });
-const engineName = process.env.WHATSAPP_ENGINE ?? (process.env.NODE_ENV === 'production' ? 'baileys' : 'mock');
+const engineName = process.env.WHATSAPP_ENGINE ?? 'baileys';
 if (process.env.NODE_ENV === 'production' && engineName === 'mock') throw new Error('Mock WhatsApp engine is forbidden in production');
 const engine: WhatsAppEngine = engineName === 'baileys' ? new BaileysWhatsAppEngine(new EncryptedAuthenticationStateRepository(), logger) : new MockWhatsAppEngine();
 const app = express();
@@ -41,6 +41,24 @@ app.post('/internal/v1/devices/:deviceId/start', route(async (req) => { const ct
 app.post('/internal/v1/devices/:deviceId/reconnect', route(async (req) => { const ctx = context(deviceParam(req.params.deviceId), req.body); const restored = await engine.restore(ctx); if (!restored) await engine.startPairing(ctx); return { device_id: ctx.deviceId, restored }; }));
 app.post('/internal/v1/devices/:deviceId/disconnect', route(async (req) => { await engine.disconnect(deviceParam(req.params.deviceId)); return { status: 'disconnected' }; }));
 app.post('/internal/v1/devices/:deviceId/logout', route(async (req) => { await engine.logout(deviceParam(req.params.deviceId)); return { status: 'logged_out' }; }));
+app.post('/internal/v1/devices/:deviceId/pairing-code', route(async (req) => {
+  const deviceId = deviceParam(req.params.deviceId);
+  const body = z.object({
+    phone_number: z.string().min(6).max(20),
+    tenant_id: z.string().min(8).max(64),
+    lease_generation: z.number().int().nonnegative(),
+  }).parse(req.body);
+  const code = await engine.requestPairingCode(deviceId, body.phone_number);
+  return { device_id: deviceId, pairing_code: code };
+}));
+app.post('/internal/v1/devices/:deviceId/check-number', route(async (req) => {
+  const deviceId = deviceParam(req.params.deviceId);
+  const body = z.object({
+    phone_number: z.string().min(6).max(25),
+  }).parse(req.body);
+  const result = await engine.checkNumber(deviceId, body.phone_number);
+  return { device_id: deviceId, phone_number: body.phone_number, ...result };
+}));
 app.delete('/internal/v1/devices/:deviceId/session', route(async (req) => { await engine.deleteSession(deviceParam(req.params.deviceId)); return { deleted: true }; }));
 app.get('/internal/v1/devices/:deviceId/status', route(async (req) => {
   const deviceId = deviceParam(req.params.deviceId);
@@ -49,6 +67,35 @@ app.get('/internal/v1/devices/:deviceId/status', route(async (req) => {
 app.post('/internal/v1/messages/send', route(async (req) => {
   const body = z.object({ command_id: z.string().min(8), message_id: z.string().min(8), device_id: z.string().min(8), tenant_id: z.string().min(8), lease_generation: z.number().int().nonnegative(), recipient: z.string().regex(/^\+[1-9]\d{7,14}$/), text: z.string().trim().min(1).max(4096) }).parse(req.body);
   const result = await engine.sendText({ commandId: body.command_id, messageId: body.message_id, deviceId: body.device_id, tenantId: body.tenant_id, leaseGeneration: body.lease_generation, recipient: body.recipient, text: body.text });
+  return { provider_message_id: result.providerMessageId, status: result.status, error_code: result.errorCode };
+}));
+app.post('/internal/v1/messages/send-media', route(async (req) => {
+  const body = z.object({
+    command_id: z.string().min(8),
+    message_id: z.string().min(8),
+    device_id: z.string().min(8),
+    tenant_id: z.string().min(8),
+    lease_generation: z.number().int().nonnegative(),
+    recipient: z.string().regex(/^\+[1-9]\d{7,14}$/),
+    media_type: z.enum(['image', 'document', 'audio', 'video']),
+    media_url: z.string().url(),
+    caption: z.string().max(2048).optional(),
+    file_name: z.string().max(255).optional(),
+    mimetype: z.string().max(100).optional(),
+  }).parse(req.body);
+  const result = await engine.sendMedia({
+    commandId: body.command_id,
+    messageId: body.message_id,
+    deviceId: body.device_id,
+    tenantId: body.tenant_id,
+    leaseGeneration: body.lease_generation,
+    recipient: body.recipient,
+    mediaType: body.media_type,
+    mediaUrl: body.media_url,
+    caption: body.caption,
+    fileName: body.file_name,
+    mimetype: body.mimetype,
+  });
   return { provider_message_id: result.providerMessageId, status: result.status, error_code: result.errorCode };
 }));
 

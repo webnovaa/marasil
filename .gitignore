@@ -67,3 +67,10 @@ yarn-error.log*
 *.p12
 auth.json
 credentials.json
+*firebase-adminsdk*.json
+data/*firebase-adminsdk*.json
+data/marasil-*.json
+
+# Scratch
+scratch/
+

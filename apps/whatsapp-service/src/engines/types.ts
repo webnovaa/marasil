@@ -6,7 +6,7 @@ export type DeviceStatus =
 export type EngineErrorCode =
   | 'DEVICE_NOT_CONNECTED' | 'DEVICE_LOGGED_OUT' | 'SESSION_CORRUPT'
   | 'LEASE_LOST' | 'NETWORK_FAILURE' | 'RATE_LIMITED' | 'INVALID_RECIPIENT'
-  | 'ENGINE_UNAVAILABLE' | 'UNKNOWN_ENGINE_ERROR';
+  | 'ENGINE_UNAVAILABLE' | 'UNKNOWN_ENGINE_ERROR' | 'RECIPIENT_NOT_ON_WHATSAPP';
 
 export interface DeviceContext {
   deviceId: string;
@@ -40,13 +40,35 @@ export interface PairingQr {
   expiresIn: number;
 }
 
+export type MediaType = 'image' | 'document' | 'audio' | 'video';
+
+export interface SendMediaCommand extends DeviceContext {
+  commandId: string;
+  messageId: string;
+  recipient: string;
+  mediaType: MediaType;
+  mediaUrl: string;
+  caption?: string;
+  fileName?: string;
+  mimetype?: string;
+}
+
+export interface SendMediaResult {
+  providerMessageId: string;
+  status: 'sent' | 'failed';
+  errorCode?: EngineErrorCode;
+}
+
 export interface WhatsAppEngine {
   readonly name: 'mock' | 'baileys';
   createSession(context: DeviceContext): Promise<void>;
   startPairing(context: DeviceContext): Promise<void>;
   getStatus(deviceId: string): Promise<DeviceStatus>;
   getPairingQr(deviceId: string): PairingQr | null;
+  requestPairingCode(deviceId: string, phoneNumber: string): Promise<string>;
+  checkNumber(deviceId: string, phoneNumber: string): Promise<{ exists: boolean; jid?: string }>;
   sendText(command: SendTextCommand): Promise<SendTextResult>;
+  sendMedia(command: SendMediaCommand): Promise<SendMediaResult>;
   disconnect(deviceId: string): Promise<void>;
   logout(deviceId: string): Promise<void>;
   restore(context: DeviceContext): Promise<boolean>;

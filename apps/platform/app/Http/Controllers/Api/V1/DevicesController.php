@@ -11,6 +11,7 @@ use App\Domain\Devices\Actions\DeleteDevice;
 use App\Domain\Devices\Actions\DisconnectDevice;
 use App\Domain\Devices\Actions\LogoutDevice;
 use App\Domain\Devices\Models\Device;
+use App\Domain\Devices\Services\WhatsAppServiceClient;
 use App\Domain\Identity\Models\User;
 use App\Domain\Messaging\Actions\AcceptTextMessage;
 use App\Http\Resources\MessageResource;
@@ -187,5 +188,78 @@ final class DevicesController extends Controller
         $signature = rtrim(strtr(base64_encode(hash_hmac('sha256', $payload, $secret, true)), '+/', '-_'), '=');
 
         return ApiResponse::success(['token' => $payload.'.'.$signature, 'expires_in' => $ttl]);
+    }
+
+    public function pairingCode(Request $request, Device $device, WhatsAppServiceClient $client): JsonResponse
+    {
+        $this->authorize('connect', $device);
+
+        $validated = $request->validate([
+            'phone_number' => ['required', 'string'],
+        ]);
+
+        $phoneNumber = preg_replace('/[^\d]/', '', $validated['phone_number']) ?? '';
+
+        if (strlen($phoneNumber) < 7) {
+            return ApiResponse::error('INVALID_PHONE', 'يرجى إدخال رقم هاتف صحيح مع مفتاح الدولة.', 422);
+        }
+
+        try {
+            $device->load('tenant');
+
+            $result = $client->requestPairingCode($device->ulid, [
+                'phone_number' => $phoneNumber,
+                'tenant_id' => $device->tenant?->ulid,
+                'lease_generation' => (int) $device->lease_generation,
+            ]);
+
+            $code = $result['data']['pairing_code'] ?? $result['pairing_code'] ?? null;
+
+            if ($code === null) {
+                return ApiResponse::error('PAIRING_FAILED', 'تعذر استخراج كود الربط من السيرفر. تأكد من تشغيل محرك Baileys.', 503);
+            }
+
+            return ApiResponse::success([
+                'pairing_code' => $code,
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('PAIRING_FAILED', 'تعذر طلب كود الربط: '.$e->getMessage(), 500);
+        }
+    }
+
+    public function checkNumber(Request $request, Device $device, WhatsAppServiceClient $client): JsonResponse
+    {
+        $this->authorize('view', $device);
+
+        $validated = $request->validate([
+            'phone' => ['required', 'string'],
+        ]);
+
+        $phoneNumber = preg_replace('/[^\d]/', '', $validated['phone']) ?? '';
+
+        if (strlen($phoneNumber) < 7) {
+            return ApiResponse::error('INVALID_PHONE', 'يرجى إدخال رقم هاتف صحيح مع مفتاح الدولة.', 422);
+        }
+
+        try {
+            $result = $client->checkNumber($device->ulid, [
+                'phone_number' => $phoneNumber,
+            ]);
+
+            $data = $result['data'] ?? $result;
+            $exists = (bool) ($data['exists'] ?? false);
+
+            return ApiResponse::success([
+                'phone' => '+'.$phoneNumber,
+                'exists' => $exists,
+                'status' => $exists ? 'valid' : 'not_registered',
+                'device' => $device->name,
+                'message' => $exists
+                    ? 'الرقم يملك حساب واتساب نشط وجاهز لاستقبال الرسائل'
+                    : 'الرقم غير مسجل على واتساب',
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('CHECK_FAILED', 'تعذر فحص الرقم: '.$e->getMessage(), 500);
+        }
     }
 }
