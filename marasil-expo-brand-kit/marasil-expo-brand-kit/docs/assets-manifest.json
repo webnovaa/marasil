@@ -1,0 +1,169 @@
+{
+  "source": {
+    "width": 424,
+    "height": 277,
+    "trim": {
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 275
+    }
+  },
+  "policy": "Original raster preserved. Generated redraw was rejected. High-resolution outputs are resampled. Monochrome assets use original alpha silhouette.",
+  "assets": [
+    {
+      "file": "assets/brand/logo.png",
+      "width": 1024,
+      "height": 670,
+      "alpha": true,
+      "purpose": "Transparent in-app logo; upscaled from original"
+    },
+    {
+      "file": "assets/brand/logo-white.png",
+      "width": 1024,
+      "height": 670,
+      "alpha": true,
+      "purpose": "White alpha silhouette for dark surfaces"
+    },
+    {
+      "file": "source/logo-2048-upscaled.png",
+      "width": 2048,
+      "height": 1341,
+      "alpha": true,
+      "purpose": "Upscaled raster, not vector or recovered detail"
+    },
+    {
+      "file": "assets/brand/icon.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": false,
+      "purpose": "Main iOS / legacy Android opaque square"
+    },
+    {
+      "file": "assets/brand/icon-dark.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": false,
+      "purpose": "Optional iOS dark: white silhouette"
+    },
+    {
+      "file": "assets/brand/icon-tinted.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": false,
+      "purpose": "Optional iOS tinted: grayscale white on black"
+    },
+    {
+      "file": "assets/brand/adaptive-foreground.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "purpose": "Android foreground, 50% width, transparent"
+    },
+    {
+      "file": "assets/brand/adaptive-monochrome.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "purpose": "Android themed icon alpha mask"
+    },
+    {
+      "file": "assets/brand/adaptive-background.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": false,
+      "purpose": "Optional Android background; default config uses color"
+    },
+    {
+      "file": "assets/brand/splash.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "purpose": "Light splash logo, central safe circle"
+    },
+    {
+      "file": "assets/brand/splash-dark.png",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "purpose": "Dark splash white silhouette"
+    },
+    {
+      "file": "assets/brand/notification.png",
+      "width": 96,
+      "height": 96,
+      "alpha": true,
+      "purpose": "Android small notification, white only on transparency"
+    },
+    {
+      "file": "public/brand/favicon-16.png",
+      "width": 16,
+      "height": 16,
+      "alpha": false,
+      "purpose": "Web favicon"
+    },
+    {
+      "file": "public/brand/favicon-32.png",
+      "width": 32,
+      "height": 32,
+      "alpha": false,
+      "purpose": "Web favicon"
+    },
+    {
+      "file": "public/brand/favicon-48.png",
+      "width": 48,
+      "height": 48,
+      "alpha": false,
+      "purpose": "Web favicon"
+    },
+    {
+      "file": "public/brand/favicon-64.png",
+      "width": 64,
+      "height": 64,
+      "alpha": false,
+      "purpose": "Web favicon"
+    },
+    {
+      "file": "assets/brand/favicon.png",
+      "width": 48,
+      "height": 48,
+      "alpha": false,
+      "purpose": "Expo web.favicon"
+    },
+    {
+      "file": "public/brand/icon-192.png",
+      "width": 192,
+      "height": 192,
+      "alpha": false,
+      "purpose": "Optional PWA any icon"
+    },
+    {
+      "file": "public/brand/icon-512.png",
+      "width": 512,
+      "height": 512,
+      "alpha": false,
+      "purpose": "Optional PWA any icon"
+    },
+    {
+      "file": "public/brand/maskable-512.png",
+      "width": 512,
+      "height": 512,
+      "alpha": false,
+      "purpose": "Optional PWA maskable icon"
+    },
+    {
+      "file": "public/brand/apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "alpha": false,
+      "purpose": "Optional Apple touch web icon"
+    },
+    {
+      "file": "assets/brand/store-icon-512.png",
+      "width": 512,
+      "height": 512,
+      "alpha": false,
+      "purpose": "Store listing icon; no rounded corners"
+    }
+  ]
+}

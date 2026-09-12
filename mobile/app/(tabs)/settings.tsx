@@ -16,6 +16,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/context/auth-context';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
@@ -168,6 +169,11 @@ export default function SettingsScreen() {
 
         {/* Footer info */}
         <View style={styles.footer}>
+          <BrandLogo
+            width={120}
+            tone={colorScheme === 'dark' ? 'white' : 'color'}
+            style={{ alignSelf: 'center', marginBottom: 8 }}
+          />
           <Text style={[styles.footerText, { color: theme.textSubtle }]}>
             {Brand.fullName}
           </Text>
